@@ -1,38 +1,38 @@
 ---
-title: Routing
-slug: routing
+title: Маршрутизація
+slug: маршрутизація
 date: 0005/01/01
 number: 5
-contents: Learn about routing in Meteor.|Create post discussion pages, with unique URLs.|Learn how to link to those URLs properly.
+contents: Навчитесь маршрутизації в Meteor.|Створите сторінки обговорення посту з унікальними URL.|Навчитесь як правильно створювати ссилки на ці сторінки.
 paragraphs: 72
 ---
 
-////
+Тепер ми маємо список постів (які будуть затверджуватись користувачем) і нам потрібна окрема сторінка посту, де наші користувачі зможуть обговорювати кожен пост.
 
-////
+Ми хотіли б, щоб ці сторінки були доступні через *постійну ссилку* -- URL у вигляді `http://myapp.com/posts/xyz` (де `xyz` - це `_id` ідентифікатор) унікальний для кожного посту. 
 
-////
+Це значить, що нам треба деяке *маршрутування* для того, щоб глянути що знаходиться в рядку пошуку браузера і видати відповідний правильний контент.
 
-### Adding the Iron Router Package
+### Додавання пакету Iron Router
 
-////
+[Iron Router](https://github.com/EventedMind/iron-router) -- це пакет маршрутизації, розробленний спеціально для Meteor додатків. 
 
-////
+Він не тільки допомагає з маршрутизацією (встановленням шляхів), але також він може ставити фільтри (призначаючи деякі дії для цих шляхів) і даже управляти підписками (контроль який шлях має доступ до яких данних). (Занотуйте: Iron Router був розроблений за участі співавтором книги *Discover Meteor* Томом Коулманом.)
 
-////
+По-перше, давайте встановимо пакет з Atmosphere: 
 
 ~~~bash
 $ mrt add iron-router
 ~~~
 <%= caption "Terminal" %>
 
-////
+Ця команда завантажує і інсталює пакет iron-router в наш додаток, готовий до використання. Зверніть увагу, що інколи вам треба рестартувати ваш Meteor додаток (через `ctrl+c` для вбивства процесу, тоді `meteor` стартує його знову) перед використанням пакету.
 
-////
+Зверніть увагу, що Iron Router це пакет 3-ої сторони, що значить вам треба буде Meteorite для його установки (`meteor add iron-router` не спрацює).
 
 <% note do %>
 
-### Router Vocabulary
+### Словник маршрутизатора
 
 ////
 
@@ -49,7 +49,7 @@ $ mrt add iron-router
 
 <% end %>
 
-### Routing: Mapping URLs To Templates
+### Маршрутизація: прив’язка ссилок до шаблонів
 
 ////
 
@@ -57,7 +57,7 @@ $ mrt add iron-router
 
 ////
 
-<%= diagram "router-diagram", "Layouts and templates.", "pull-center" %>
+<%= diagram "router-diagram", "Макети і шаблони.", "pull-center" %>
 
 ////
 
@@ -182,11 +182,11 @@ Router.map(function() {
 
 ////
 
-<%= commit "5-2", "Wait on the post subscription." %>
+<%= commit "5-2", "Зачекайте підписки на пост." %>
 
 <% note do %>
 
-### A First Glance At Reactivity
+### Перший погляд на реактивність
 
 ////
 
@@ -196,7 +196,7 @@ Router.map(function() {
 
 <% end %>
 
-### Routing To A Specific Post
+### Маршрутизація до певного посту
 
 ////
 
@@ -260,7 +260,7 @@ Router.map(function() {
 
 <% note do %>
 
-### More About Data Contexts
+### Більше про контексти даних
 
 ////
 
@@ -288,7 +288,7 @@ Router.map(function() {
 
 <% end %>
 
-### Using a Dynamic Named Route Helper
+### Використання динамічно-іменного помічника маршруту
 
 ////
 
