@@ -3,37 +3,40 @@ title: The Session
 slug: the-session
 date: 0005/01/02
 number: 5.5
+points: 5
 sidebar: true
-contents: Learn about the Meteor Session|Learn about the autorun function|Learn about Hot Code Reload
+photoUrl: http://www.flickr.com/photos/philmosby/11372421963/
+photoAuthor: Phil Mosby
+contents: Познайомимося з Meteor сесіями|Вивчимо функцію автозапуску|Познайомимось з гарячим перезавантаженням коду - Hot Code Reload
 paragraphs: 33
 ---
 
-////
+Meteor -- це реактивний фреймворк. Це значить, що якщо змінюються дані, то змінюються речі в вашому додатку без необхідності вам що небудь робити.
 
-////
+Ми вже бачили це в роботі, коли наші шаблони змінювались при зміні даних і маршрутів.
 
-////
+В наступних розділах ми розберемося глибше в тому, як це працює, але на разі нам би хотілося представити лише деякі базові реактивні функції, які є надзвичайно корисними в загальних додатках.
 
-### The Meteor Session
+### Сесії Meteor
 
-////
+Прямо зараз в Microscope, поточний стан додатку користувача повністю міститься в URL, на який вони дивляться (і базі). 
 
-////
+Але у багатьох випадках, вам треба зберігати деякий ефемерний стан, який пов’язаний тільки з поточною версією додатку (наприклад, якщо елемент показано або скрито). Сесія -- це зручний спосіб для цього.
 
-////
+Сесія -- це глобальний хранитель реактивних даних. Глобальний у сенсі глобального одиничного об’єкту: існує одна сесія і вона доступна звідусіль. Глобальні змінні звичайно є поганою практикою, але в цьому випадку сесія використовується як центральний комунікативний провід для різних частин додатку.
 
-### Changing the Session
+### Зміна сесії
 
-////
+Сесія всюди доступна як `Session`. Для встановлення значення сесії дати виклик:
 
 ~~~js
 ❯ Session.set('pageTitle', 'A different title');
 ~~~
-<%= caption "Browser console" %>
+<%= caption "Консоль браузера" %>
 
-////
+Ви можете зчитати дані знову за допомогою `Session.get('mySessionProperty');`. Це реактивне джерело даних, що значить, що якщо ви поклали щось в помісник, то ви побачите, що вихід з помічника змінаиться реактивно як змінюється змінна Session.
 
-////
+Щоб це перевірити, добавте наступний код до шаблону макету:
 
 ~~~html
 <header class="navbar">
@@ -51,30 +54,30 @@ Template.layout.helpers({
 ~~~
 <%= caption "client/views/application/layout.js"%>
 
-////
+Автоматичне перезавантаження Meteor (также відомий як гаряче перезавантаження коду - “hot code reload” або HCR) консервує змінні сесії, тому ми побачимо тепер "A different title" в навігаційному барі. Якщо ні, просто наберіть знову попередню команду `Session.set()`.
 
-////
+Більш того, якщо ми змінимо значення ще раз (знову в консолі браузера), то ми побачимо вже інший заголовок:
 
 ~~~js
 ❯ Session.set('pageTitle', 'A brand new title');
 ~~~
 <%= caption "Browser console" %>
 
-////
+Сесія доступна глобально, тому такі зміни можуть бути зроблені з любого місця додатку. Це дає нам великі можливості, але і часто може слугувати пасткою,якщо використовується занадто часто.
 
 <% note do %>
 
 ### Identical Changes
 
-////
+If you modify a Session variable with `Session.set()` but set it to an identical value, Meteor is smart enough to bypass the reactive chain, and avoid unnecessary method calls. 
 
 <% end %>
 
 ### Introducing Autorun
 
-////
+We've looked at an example of a reactive data source, and watched it in action inside a template helper. But while some contexts in Meteor (such as template helpers) are inherently reactive, the majority of a Meteor's app code is still plain old non-reactive JavaScript. 
 
-////
+Let's suppose we have the following code snippet somewhere in our app:
 
 ~~~js
 helloWorld = function() {
@@ -82,11 +85,11 @@ helloWorld = function() {
 }
 ~~~
 
-////
+Even though we're calling a Session variable, the *context* in which it's called is not reactive, meaning that we won't get new `alert`s every time we change the variable. 
 
-////
+This is where [Autorun](http://docs.meteor.com/#deps_autorun) comes in. As the name implies, the code inside an `autorun` block will automatically run and keep running each and every time the reactive data sources used inside it change.
 
-////
+Try typing this into the browser console:
 
 ~~~js
 ❯ Deps.autorun( function() { console.log('Value is: ' + Session.get('pageTitle')); } );
@@ -94,7 +97,7 @@ Value is: A brand new title
 ~~~
 <%= caption "Browser console" %>
 
-////
+As you might expect, the block of code provided inside the `autorun` runs once, outputting its data to the console. Now, let's try changing the title:
 
 ~~~js
 ❯ Session.set('pageTitle', 'Yet another value');
@@ -102,9 +105,9 @@ Value is: Yet another value
 ~~~
 <%= caption "Browser console" %>
 
-////
+Magic! As the session value changed, the `autorun` knew it had to run its contents all over again, re-outputting the new value to the console. 
 
-////
+So going back to our previous example, if we want to trigger a new alert every time our Session variable changes, all we need to do is wrap our code in an `autorun` block:
 
 ~~~js
 Deps.autorun(function() {
@@ -112,15 +115,15 @@ Deps.autorun(function() {
 });
 ~~~
 
-////
+As we've just seen, autoruns can be very useful to track reactive datasources and react imperatively to them. 
 
 ### Hot Code Reload
 
-////
+During our development of Microscope, we've been taking advantage of one of Meteor's time-saving features: hot code reload (HCR). Whenever we save one of our source code files, Meteor detects the changes and transparently restarts the running Meteor server, informing each client to reload the page.
 
-////
+This is similar to an automatic reload of the page, but with an important difference. 
 
-////
+To find out what that is, start by resetting the session variable we've been using:
 
 ~~~js
 ❯ Session.set('pageTitle', 'A brand new title');
@@ -129,7 +132,7 @@ Deps.autorun(function() {
 ~~~
 <%= caption "Browser console" %>
 
-////
+If we were to reload our browser window manually, our Session variables would naturally be lost (since this would create a new session). On the other hand, if we trigger a hot code reload (for example, by saving one of our source files) the page will reload, but the session variable will still be set. Try it now!
 
 ~~~js
 ❯ Session.get('pageTitle');
@@ -137,11 +140,11 @@ Deps.autorun(function() {
 ~~~
 <%= caption "Browser console" %>
 
-////
+So if we're using session variables to keep track of exactly what the user is doing, the HCR should be almost transparent to the user, as it will preserve the value of all session variables. This enables us to deploy new production versions of our Meteor application with the confidence that our users will be minimally disrupted.
 
-////
+Consider this for a moment. If we can manage to keep all of our state in the URL and the session, we can transparently change the _running source code_ of each client's application underneath them with minimal disruption.
 
-////
+Let's now check what happens when we refresh the page manually:
 
 ~~~js
 ❯ Session.get('pageTitle');
@@ -149,9 +152,9 @@ null
 ~~~
 <%= caption "Browser console" %>
 
-////
+When we reloaded the page, we lost the session. On an HCR, Meteor saves the session to local storage in your browser and loads it in again after the reload. However, the alternate behaviour on explicit reload makes sense: if a user reloads the page, it's as if they've browsed to the same URL again, and they should be reset to the starting state that any user would see when they visit that URL.
 
-////
+The important lessons in all this are:
 
-1. ////
-2. ////
+1. Always store user state in the Session or the URL so that users are minimally disrupted when a hot code reload happens.
+2. Store any state that you want to be shareable between users *within the URL itself*.
