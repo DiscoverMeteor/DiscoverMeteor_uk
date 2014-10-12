@@ -78,21 +78,21 @@ Template.postsList.helpers({
 
 За лаштунками Метеор прив’язує колбеки `observe()` для нас і перемальовує відповідні секції HTML, коли змінюються реактивні дані.
 
-### Dependency Tracking in Meteor: Computations
+### Відслідковування залежностей в Meteor: розрахунки
 
-While Meteor is a real-time, reactive framework, not *all* of the code inside a Meteor app is reactive. If this were the case, your whole app would re-run every time anything changed. Instead, reactivity is limited to specific areas of your code, and we call these areas **computations**. 
+Не дивлячись на те, що Meteor - це реактивний фреймворк реального часу, не *весь* код всередині Метеор додатку є реактивним. Якщо це саме той випадок, то весь додаток перезавантажувся кожен раз, коли щось змінюється. Замість цього, реактивність обмежена у специфічних зонах вашого коду і ми називаємо ці зони **розрахунками**.
 
-In other words, a computation is a block of code that runs every time one of the reactive data sources it depends on changes. If you have a reactive data source (for example, a Session variable) and would like to respond reactively to it, you'll need to set up a computation for it. 
+Іншими словами, розрахунок - це блок коду, що запускається кожен раз, коли одне з джерел реактивних даних змінюється, він залежить від змін. Якщо ви маєте джерело реактивних даних (наприклад, змінну сесії) і хотіли б реативно реагувати на неї, то вам необхідно встановити розрахунок для неї.
 
-Note that you usually don't need to do this explicitly because Meteor already gives each template it renders its own special computation (meaning that code in template helpers and callbacks is reactive by default).
+Зверніть увагу, що звичайно вам не треба цього робити, тому що Meteor вже надав кожному шаблону таку можливість, він рендерить свою власну спеціальну компутацію (що значить, що код в хелперах шаблону і колбеках реактивний за замовчуванням).
 
-Every reactive data source tracks all the computations that are using it so that it can let them know when its own value changes. To do so, it calls the `invalidate()` function on the computation.
+Кожне реактивне джерело даних відслідковує всі розрахунки, що використовують її, таким чином, щоб вона давала знати їм кожен раз коли її значення змінюються. Щоб це зробити вона викликає функцію `invalidate()` для розрахунку.
 
-Computations are generally set up to simply re-evaluate their contents on invalidation, and this is what happens to the template computations (although template computations also do some magic to try and redraw the page more efficiently). Although you can have more control on what your computation does on invalidation if you need to, in practice this is almost always the behavior you'll be using.
+Розрахунки звичайно встановлюються для простого переоцінення свого змісту при інвалідації і це відбувається з розрахунками шаблону (хоча розрахунки шаблону також роблять деяку магію для більш ефективного перемалювання сторінки). Також ви можете мати більше контролю на тим, як ваші розрахунки працюють над необхідною інвалідацією, на практиці це завжди поведінка, яку ви будете використовувати.
 
-### Setting Up a Computation
+### Налаштування розрахунку
 
-Now that we understand the theory behind computations, actually setting one up will seem disproportionately easy. We simply use the `Tracker.autorun` function to enclose a block of code in a computation and make it reactive:
+Тепер, коли ви зрозуміли теорію щодо розрахунків, реальна настройка одного буде досить простою. Ми просто використаємо функцію `Tracker.autorun`  для включення блоку коду в розрахунок і зробимо його реактивним:
 
 ~~~js
 Meteor.startup(function() {
@@ -102,13 +102,13 @@ Meteor.startup(function() {
 });
 ~~~
 
-Note that we need to wrap the `Tracker` block inside a `Meteor.startup()` block to ensure that it only runs once Meteor has finished loading the `Posts` collection. 
+Зверніть увагу, що нам необхідно обгорнути блок `Tracker` всередину блока `Meteor.startup()` для того, щоб він запускався лише, коли Meteor закінчить завантаження колекції `Posts`. 
 
-Behind the scenes, `autorun` then creates a computation, and wires it up to re-evaluate whenever the data sources it depends on change. We've set up a very simple computation that simply logs the number of posts to the console. Since `Posts.find()` is a reactive data source, it will take care of telling the computation to re-evaluate every time the number of posts changes.
+За лаштунками, `autorun` далі створює розрахунок і прив’язує його до переоцінки залежного джерела даних. Ми встановили дуже просту компутацію, що просто веде лог кількості постів в консолі. Оскільки `Posts.find()` - це реактивне джерело данних, воно подбає про повідомлення розрахунку про обчислення кожного разу при зміні кількості постів.
 
 ~~~js
 > Posts.insert({title: 'New Post'});
 There are 4 posts.
 ~~~
 
-The net result of all this is that we can write code that uses reactive data in a very natural way, knowing that behind the scenes the dependency system will take care of re-running it at just the right times.
+Практичним результатом всього цього буде те, що ми можемо писати код, що використовує реактивні дані, в дуже природний спосіб, знаючи, що за лаштунками система залежностей подбає про перезапуск всього в потрібний момент.
