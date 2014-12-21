@@ -1,284 +1,241 @@
 ---
-title: Getting Started
-slug: getting-started
+title: Початок роботи
+slug: початок роботи
 date: 0002/01/01
 number: 2
-contents: Install Meteor & Meteorite.|Learn about the 5 types of Meteor packages.|Setup the file structure of your Meteor app.
+points: 1
+photoUrl: http://www.flickr.com/photos/ikewinski/9511230392/
+photoAuthor: Mike Lewinski
+contents: Встановіть Meteor.|Ознайомтесь з 5 типами модулів Meteor.|Налаштуєте файлову структуру вашого Meteor-додатка.
 paragraphs: 49
 ---
 
-////
+Перші враження дуже важливі і процес установки Meteor не повинен бути складним. У більшості випадків це займає менше п’яти хвилин. 
 
-////
+Для початку роботи ми можемо встановити Meteor, відкривши вікно терміналу і набравши:
 
 ~~~bash
 $ curl https://install.meteor.com | sh
 ~~~
 
-////
+Це встановить виконання команди `meteor` у вашу систему, після чого ви зможете користуватися Метеором.
 
 <% note do %>
 
-### *Not* Installing Meteor
+### *Не* встановлюємо Meteor 
 
-////
+Якщо ви не можете (або не хочете) встановлювати Meteor локально, ми рекомендуємо [Nitrous.io](http://nitrous.io).
 
-////
+Nitrous.io - це сервіс, який дозволяє запускати додатки та редагувати свій код прямо в браузері. Ми написали [короткий довідник](https://www.discovermeteor.com/blog/meteor-nitrous), який допоможе вам розібратися.
 
-////
-
-<% end %>
- 
-### Meteorite
-
-////
-
-////
-
-### Installing Meteorite
-
-////
- 
-- [Node download site](http://nodejs.org/download/)
-- [Git download site](http://git-scm.com/downloads)
-
-////
-
-~~~bash
-$ npm install -g meteorite
-~~~
-
-<% note do %>
-
-### Permission errors?
-
-////
-
-~~~bash
-$ sudo -H npm install -g meteorite
-~~~
-
-////
+Ви можете просто зупинитися (включно) на пункті "Установка Meteor", а потім повернутися до книги, починаючи знову з пункту поточного розділу: "Створюємо Простий Додаток".
 
 <% end %>
 
-////
+### Створюємо простий додаток
 
-////
-
-<% note do %>
-
-  ### `mrt` vs `meteor`
-  
-////
-  
-<% end %>
-
-### Creating a Simple App
-
-////
+Тепер, коли ми установили Meteorite, давайте створимо додаток. Для цього ми використовуємо у Meteor командний рядок `mrt`:
 
 ~~~bash
 $ mrt create microscope
 ~~~
 
-////
+Ця команда завантажить Meteor і налаштує вам готовий до використання базовий проект. Після завершення ви повинні побачити, що директорія `microscope/` містить наступне:
 
 ~~~bash
-microscope.css  
+microscope.css 
 microscope.html 
-microscope.js   
+microscope.js  
 smart.json 
 ~~~
 
-////
+Додаток, який Meteor створив для вас – це проста шаблонна програма, що демонструє кілька простих паттернів.
 
-////
+І хоча наш додаток поки не багато чого робить, ми все ж можемо його запустити. Щоб запустити додаток, поверніться у вікно свого терміналу і введіть:
 
 ~~~bash
 $ cd microscope
 $ meteor
 ~~~
 
-////
+Тепер перейдіть у вашому браузері по цій ссилці: `http://localhost:3000/` (або еквівалент `http://0.0.0.0:3000/`) і ви повинні побачити приблизно наступне: 
 
-<%= screenshot "2-1", "Meteor's Hello World." %>
+<%= screenshot "2-1", "Meteor додаток Hello World." %>
 
-<%= commit "2-1", "Created basic microscope project." %>
+<%= commit "2-1", "Створення базового проекту microscope." %>
 
-////
+Вітаємо! Ви створили свій перший додаток у Meteor. До речі, щоб зупинити його роботу, вам потрібно лише відкрити вкладку терміналу, в якому запущено програму і натиснути `ctrl+c`. 
 
-### Adding a Package
+### Додаємо модуль
 
-////
+Зараз ми використаємо Meteorite, щоб додати інтелектуальний модуль (який дозволить нам включити [Bootstrap](http://getbootstrap.com/) в наш проект:
 
 ~~~bash
-$ mrt add bootstrap
+$ meteor add bootstrap
 ~~~
 
-<%= commit "2-2", "Added bootstrap package." %>
+<%= commit "2-2", "Додавання пакету bootstrap." %>
 
 <% note do %>
 
-### A Note on Packages
+### Зауваження про модулі
 
-////
+Коли ми говоримо про модулі у контексті Meteor, ми повинні враховувати деякі особливості. Meteor використовує 5 основних типів модулів:
 
-- ////
-- ////
-- ////
-- ////
-- ////
+- Саме ядро Meteor складається з багатьох **базових модулів**. Вони входять в кожен додаток фреймворку, тож вам поки взагалі не треба задумуватись над цим.
+- **Локальні модулі** – модулі користувачів, які ви можете самі створити у директорії `/packages`.
+- **Інтелектуальні модулі з Atmosphere** – це модулі сторонніх розробників, список який знаходиться на [Atmosphere](http://atmosphere.meteor.com).
+- **NPM-модулі** (Node Packaged Modules) — це модулі Node.js. Хоча вони не працюють з коробки, їх можна використовувати попередніми видами модулів.
 
 <% end %>
 
-### The File Structure of a Meteor App
+### Файлова структура Meteor-додатка
 
-////
+Перш ніж почати кодування нам потрібно правильно організувати наш проект належним чином. Для гарантії того, що ми маємо чисту збірку, відкрийте директорію `microscope` і видаліть `microscope.html`, `microscope.js` і `microscope.css`.
 
-////
+Далі створіть п'ять основних директорій всередині `/microscope`: `/client`, `/server`, `/public`, `/lib` та `/collections`, а також порожні файли `main.html` і `main.js` всередині `/client`. Не турбуйтеся, що наразі це порушує додаток, ми поговоримо про ці файли у наступному розділі.
 
-////
+Ми повинні зазначити, що деякі з цих директорій є особливими. Коли справа доходить до файлів, Meteor має кілька правил:
 
-- ////
-- ////
-- ////
-- ////
-- ////
-- ////
+- Код в директорії `/server` працює тільки на сервері.
+- Код в директорії `/client` працює тільки на клієнті.
+- Всі інші коди працюють як на клієнті, так і на сервері.
+- Файли в директорії `/lib` завантажуються найпершими.
+- Будь-які файли з назвою `main.*` завантажуються після всіх інших.
+- Ваші статичні об’єкти (шрифти, зображення тощо) – кидайте в директорію `/public`. 
 
-////
+Зверніть увагу, що хоча Meteor має ці правила, він насправді не змушує вас використовувати будь-яку задану структуру файлів для вашого додатку, якщо ви не хочете. Таким чином, рекомендована нами структура – лише один зі способів організації файлів, а не обов’язкове правило.
 
-////
+За детальнішою інформацією з цього питання звертайтеся до [офіціальної документації Meteor](http://docs.meteor.com/#structuringyourapp).
 
 <% note do %>
 
-### Is Meteor MVC?
+### Чи Meteor – це MVC-фреймворк?
 
-////
+Якщо до цього ви працювали з такими фреймфорками як Ruby on Rails, ви можете запитати себе чи приймають Meteor-додатки паттерн MVC (Model View Controller).
 
-////
+Коротка відповідь: ні. На відміну від Rails, Meteor не нав’язує жодної структури для вашої програми. Тож у цій книзі ми просто викладаємо нашу структуру додатку, що, за нашими переконаннями, є найзручнішим, не переймаючись тим як це назвати.
 
 <% end %>
 
-### No public?
+### Немає директорії public?
 
-////
+Гаразд, ми збрехали. Нам насправді не потрібна директорія `public/` з тієї простої причини, що Microscope не використовує статичні файли! Але оскільки більшість інших Meteor-додатків включатимуть принаймні кілька зображень, ми вважали важливим сказати і про цю директорію.
 
-////
+До речі, ви також могли помітити приховану директорію `.meteor`. Це місце, де Meteor зберігає свій власний код, і, як правило, щось змінювати там – дуже погана ідея. Насправді, вам ніколи і не знадобиться туди заходити. Єдиним винятком з цього правила є файли `.meteor/packages` і `.meteor/release`, які відповідно використовуються для ваших модулів та вашу версію Meteor. При додаванні модулів або зміні версії Meteor, корисно перевірити зміни в цих файлах.
 
 <% note do %>
 
 ### Underscores vs CamelCase
 
-////
+Єдине, що ми скажемо про конкуренцію між underscore (`my_variable`) та camelCase (`myVariable`) – це насправді не грає великої ролі, який зі стилів ви використовуєте.
 
-////
+У цій книзі ми використовуємо camelCase, оскільки він є стандартним для JavaScript (зрештою, це саме JavaScript, а не java_script!).
 
-////
+Лише один виняток з цього правила складають імена файлів із (`my_file.js`), CSS-класи із (`.my-class`). Причина полягає у тому, що нижнє підкреслення притаманне більше файловій системі, тоді як CSS у самому своєму синтаксисі вже використовує дефіси (`font-family`, `text-align` тощо).
 
 <% end %>
 
-### Taking Care of CSS
+### CSS
 
-////
+Ця книга не про CSS. Тому, щоб уникнути проблем з оформленням, ми вирішили зробити всю таблицю стилів доступною з самого початку, так щоб вам не потрібно було про це більше турбуватися. 
 
-////
+Meteor автоматично завантажує і мінімізує CSS, тому стилі на відміну від інших статичних файлів попадають у `/client`, а не у `/public`. Продовжуйте свою роботу і створіть директорію `client/stylesheets/` і помістіть туди файл `style.css`:
 
 ~~~css
 .grid-block, .main, .post, .comments li, .comment-form {
-    background: #fff;
-    border-radius: 3px;
-    padding: 10px;
-    margin-bottom: 10px;
-    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
+  background: #fff;
+  border-radius: 3px;
+  padding: 10px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
 }
 body {
-    background: #eee;
-    color: #666666;
+  background: #eee;
+  color: #666666;
 }
 .navbar { margin-bottom: 10px }
 .navbar .navbar-inner {
-    border-radius: 0px 0px 3px 3px;
+  border-radius: 0px 0px 3px 3px;
 }
 #spinner { height: 300px }
 .post {
-    *zoom: 1;
-    -webkit-transition: all 300ms 0ms;
-    -webkit-transition-delay: ease-in;
-    -moz-transition: all 300ms 0ms ease-in;
-    -o-transition: all 300ms 0ms ease-in;
-    transition: all 300ms 0ms ease-in;
-    position: relative;
-    opacity: 1;
+  *zoom: 1;
+  -webkit-transition: all 300ms 0ms;
+  -webkit-transition-delay: ease-in;
+  -moz-transition: all 300ms 0ms ease-in;
+  -o-transition: all 300ms 0ms ease-in;
+  transition: all 300ms 0ms ease-in;
+  position: relative;
+  opacity: 1;
 }
 .post:before, .post:after {
-    content: "";
-    display: table;
+  content: "";
+  display: table;
 }
 .post:after { clear: both }
 .post.invisible { opacity: 0 }
 .post .upvote {
-    display: block;
-    margin: 7px 12px 0 0;
-    float: left;
+  display: block;
+  margin: 7px 12px 0 0;
+  float: left;
 }
 .post .post-content { float: left }
 .post .post-content h3 {
-    margin: 0;
-    line-height: 1.4;
-    font-size: 18px;
+  margin: 0;
+  line-height: 1.4;
+  font-size: 18px;
 }
 .post .post-content h3 a {
-    display: inline-block;
-    margin-right: 5px;
+  display: inline-block;
+  margin-right: 5px;
 }
 .post .post-content h3 span {
-    font-weight: normal;
-    font-size: 14px;
-    display: inline-block;
-    color: #aaaaaa;
+  font-weight: normal;
+  font-size: 14px;
+  display: inline-block;
+  color: #aaaaaa;
 }
 .post .post-content p { margin: 0 }
 .post .discuss {
-    display: block;
-    float: right;
-    margin-top: 7px;
+  display: block;
+  float: right;
+  margin-top: 7px;
 }
 .comments {
-    list-style-type: none;
-    margin: 0;
+  list-style-type: none;
+  margin: 0;
 }
 .comments li h4 {
-    font-size: 16px;
-    margin: 0;
+  font-size: 16px;
+  margin: 0;
 }
 .comments li h4 .date {
-    font-size: 12px;
-    font-weight: normal;
+  font-size: 12px;
+  font-weight: normal;
 }
 .comments li h4 a { font-size: 12px }
 .comments li p:last-child { margin-bottom: 0 }
 .dropdown-menu span {
-    display: block;
-    padding: 3px 20px;
-    clear: both;
-    line-height: 20px;
-    color: #bbb;
-    white-space: nowrap;
+  display: block;
+  padding: 3px 20px;
+  clear: both;
+  line-height: 20px;
+  color: #bbb;
+  white-space: nowrap;
 }
 .load-more {
-    display: block;
-    border-radius: 3px;
-    background: rgba(0, 0, 0, 0.05);
-    text-align: center;
-    height: 60px;
-    line-height: 60px;
-    margin-bottom: 10px;
+  display: block;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.05);
+  text-align: center;
+  height: 60px;
+  line-height: 60px;
+  margin-bottom: 10px;
 }
 .load-more:hover {
-    text-decoration: none;
-    background: rgba(0, 0, 0, 0.1);
+  text-decoration: none;
+  background: rgba(0, 0, 0, 0.1);
 }
 ~~~
 <%= caption "client/stylesheets/style.css" %>
@@ -287,9 +244,9 @@ body {
 
 <% note do %>
 
-### A Note on CoffeeScript
+### Зауваження про CoffeeScript
 
-////
+У цій книзі ми будемо писати на чистому JavaScript. Але якщо ви надаєте перевагу CoffeeScript, то Meteor підтримує його. Просто додайте пакет CoffeeScript та починайте роботу:
 
 `mrt add coffeescript`
 
