@@ -18,7 +18,7 @@ paragraphs: 60
 
 Для початку створимо маршрут до нашої нової сторінки:
 
-~~~ js
+~~~js
 Router.configure({
   layoutTemplate: 'layout',
   loadingTemplate: 'loading',
@@ -37,11 +37,10 @@ Router.route('/submit', {name: 'postSubmit'});
 
 Router.onBeforeAction('dataNotFound', {only: 'postPage'});
 ~~~
-<<<<<<< HEAD
-<% = caption "lib / router.js"%>
-<% = highlight "15"%>
+<%= caption "lib/router.js" %>
+<%= highlight "15" %>
 
-### Додаєвання лінку в заголовок
+### Додавання лінку в заголовок
 
 Тепер, коли у нас визначено маршрут нової сторінки, ми можемо додати на неї посилання в заголовок:
 
@@ -68,38 +67,6 @@ Router.onBeforeAction('dataNotFound', {only: 'postPage'});
       </div>
     </div>
   </nav>
-=======
-<% = Caption "lib / router.js"%>
-<% = Highlight "15"%>
-
-### Додаємо лінк в заголовок
-
-Тепер, коли у нас є маршрут нової сторінки, давайте додамо на неї посилання в заголовок:
-
-~~~ html
-<template name = "header">
-<nav class = "navbar navbar-default" role = "navigation">
-<div class = "container-fluid">
-<div class = "navbar-header">
-<button type = "button" class = "navbar-toggle collapsed" data-toggle = "collapse" data-target = "# navigation">
-<span class = "sr-only"> Toggle navigation </span>
-<span class = "icon-bar"> </span>
-<span class = "icon-bar"> </span>
-<span class = "icon-bar"> </span>
-</button>
-<a class="navbar-brand" href="{{pathFor'postsList'}}"> Microscope </a>
-</div>
-<div class = "collapse navbar-collapse" id = "navigation">
-<ul class = "nav navbar-nav">
-<li> <a href="{{pathFor'postSubmit'}}"> Submit Post </a> </li>
-</ul>
-<ul class = "nav navbar-nav navbar-right">
-{{> LoginButtons}}
-</ul>
-</div>
-</div>
-</nav>
->>>>>>> df6c6c1d2f1091ccb8483bd62245e5854e2fcda1
 </template>
 ~~~
 <%= caption "client/templates/includes/header.html" %>
@@ -107,23 +74,23 @@ Router.onBeforeAction('dataNotFound', {only: 'postPage'});
 
 Створення маршруту означає, що якщо користувач вирішить відкрити адресу `/ submit` в браузері, Meteor відрендерить шаблон` postSubmit`. Давайте створимо цей шаблон:
 
-~~~ html
-<template name = "postSubmit">
-<form class = "main form">
-<div class = "form-group">
-<label class = "control-label" for = "url"> URL </label>
-<div class = "controls">
-<input name = "url" id = "url" type = "text" value = "" placeholder = "Your URL" class = "form-control" />
-</div>
-</div>
-<div class = "form-group">
-<label class = "control-label" for = "title"> Title </label>
-<div class = "controls">
-<input name = "title" id = "title" type = "text" value = "" placeholder = "Name your post" class = "form-control" />
-</div>
-</div>
-<input type = "submit" value = "Submit" class = "btn btn-primary" />
-</form>
+~~~html
+<template name="postSubmit">
+  <form class="main form">
+    <div class="form-group">
+      <label class="control-label" for="url">URL</label>
+      <div class="controls">
+          <input name="url" id="url" type="text" value="" placeholder="Your URL" class="form-control"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="control-label" for="title">Title</label>
+      <div class="controls">
+          <input name="title" id="title" type="text" value="" placeholder="Name your post" class="form-control"/>
+      </div>
+    </div>
+    <input type="submit" value="Submit" class="btn btn-primary"/>
+  </form>
 </template>
 ~~~
 <%= caption "client/templates/posts/post_submit.html" %>
@@ -132,11 +99,11 @@ Router.onBeforeAction('dataNotFound', {only: 'postPage'});
 
 <%= screenshot "7-1", "Форма для нового посту"%>
 
-Нам не потрібно хвилюватися щодо параметра `action` для цієї форми, так як ми перехопимо подію і відправимо дані за допомогою JavaScript. Також не варто хвилюватися щодо варіанту коли JavaScript вимкнено в браузері - адже тоді додаток Meteor просто не буде працювати.
+Це проста форма. Нам не потрібно хвилюватися щодо параметра `action` для цієї форми, так як ми перехопимо події форми і оновимо дані за допомогою JavaScript. (Також не варто хвилюватися щодо варіанту, коли JavaScript вимкнено в браузері - адже тоді додаток Meteor просто не буде працювати).
 
 ### Створення постів
 
-Давайте створимо обробник подій для кнопки `Submit`. Найпростіше використовувати подію `submit` (ніж, наприклад, ловити подія` click` на кнопці), адже тоді ми охопимо всі можливі сценарії подій (наприклад, натискання кнопки `Enter` в формі).
+Давайте прив’яжемо обробник подій для події `Submit`. Найпростіше використовувати подію `submit` (ніж, наприклад, ловити подія` click` на кнопці), адже тоді ми охопимо всі можливі сценарії подій (наприклад, натискання кнопки `Enter` в формі).
 
 ~~~js
 Template.postSubmit.events({
@@ -257,26 +224,21 @@ Router.onBeforeAction(requireLogin, {only: 'postSubmit'});
 
 Тепер створимо шаблон для сторінки "Доступ заборонено":
 
-<<<<<<< HEAD
 ~~~html
 <template name="accessDenied">
   <div class="access-denied jumbotron">
     <h2>Access Denied</h2>
     <p>You can't get here! Please log in.</p>
   </div>
-=======
-~~~ html
-<template name = "accessDenied">
-<div class = "access-denied jumbotron">
-<h2> Access Denied </h2>
-<p> You can not get here! Please log in. </P>
-</div>
->>>>>>> df6c6c1d2f1091ccb8483bd62245e5854e2fcda1
 </template>
 ~~~
 <%= caption "client/templates/includes/access_denied.html" %>
 
-<%= commit "7-3", "Доступ заборонений до сторінки з новими постами якщо користувач не залогінився"%>
+<%= commit "7-3", "Denied access to new posts page when not logged in." %>
+
+If you now head to http://localhost:3000/submit/ without being logged in, you should see a message similar to this one:
+
+<%= screenshot "7-3", "Доступ заборонений до сторінки з новими постами якщо користувач не залогінився"%>
 
 Якщо ви спробуєте перейти на http://localhost:3000/submit/ не авторизувавшись, то ви побачите повідомлення схоже на таке:
 
@@ -322,13 +284,8 @@ Router.onBeforeAction(requireLogin, {only: 'postSubmit'});
 ~~~html
 //...
 
-<<<<<<< HEAD
 <ul class="nav navbar-nav">
   {{#if currentUser}}<li><a href="{{pathFor 'postSubmit'}}">Submit Post</a></li>{{/if}}
-=======
-<ul class = "nav navbar-nav">
-{{#if currentUser}} <li> <a href="{{pathFor'postSubmit'}}"> Submit Post </a> </li> {{/ if}}
->>>>>>> df6c6c1d2f1091ccb8483bd62245e5854e2fcda1
 </ul>
 
 //...
