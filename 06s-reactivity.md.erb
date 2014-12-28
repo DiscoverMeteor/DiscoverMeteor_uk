@@ -5,7 +5,7 @@ date: 0006/01/02
 number: 6.5
 sidebar: true
 contents: Learn about Meteor's reactive code dependency system.|Understand the motivations and how it makes code declarative.|Learn to use advanced code that uses reactive data.
-paragraphs: 20
+paragraphs: 21
 ---
 
 ////
@@ -92,10 +92,14 @@ Template.postsList.helpers({
 ////
 
 ~~~js
-Deps.autorun(function() {
-  console.log('There are ' + Posts.find().count() + ' posts');
+Meteor.startup(function() {
+  Tracker.autorun(function() {
+    console.log('There are ' + Posts.find().count() + ' posts');
+  });
 });
 ~~~
+
+////
 
 ////
 

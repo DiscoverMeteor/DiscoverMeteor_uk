@@ -5,7 +5,7 @@ date: 0002/01/02
 number: 2.5
 sidebar: true
 contents: Learn how to deploy on Meteor.com.|Learn how to deploy on Modulus.|Learn how to deploy on your own server using Meteor Up.
-paragraphs: 46
+paragraphs: 48
 ---
 
 ////
@@ -31,20 +31,10 @@ paragraphs: 46
 ////
 
 ~~~bash
-$ meteor deploy myapp.meteor.com
+meteor deploy myapp.meteor.com
 ~~~
 
 ////
-
-////
-
-### Password Protection
-
-////
-
-~~~~bash
-$ meteor deploy myapp.meteor.com -p
-~~~~
 
 ////
 
@@ -65,19 +55,19 @@ $ meteor deploy myapp.meteor.com -p
 ////
 
 ~~~bash
-$ npm install -g modulus
+npm install -g modulus
 ~~~
 
 ////
 
 ~~~bash
-$ modulus login
+modulus login
 ~~~
 
 ////
 
 ~~~bash
-$ modulus project create
+modulus project create
 ~~~
 
 ////
@@ -85,13 +75,13 @@ $ modulus project create
 ////
 
 ~~~bash
-$ modulus env set MONGO_URL "mongodb://<user>:<pass>@mongo.onmodulus.net:27017/<database_name>"
+modulus env set MONGO_URL "mongodb://<user>:<pass>@mongo.onmodulus.net:27017/<database_name>"
 ~~~
 
 ////
 
 ~~~bash
-$ modulus deploy
+modulus deploy
 ~~~
 
 ////
@@ -111,7 +101,7 @@ $ modulus deploy
 ////
 
 ~~~bash
-$ npm install -g mup
+npm install -g mup
 ~~~
 
 ////
@@ -121,9 +111,9 @@ $ npm install -g mup
 ////
 
 ~~~bash
-$ mkdir ~/microscope-deploy
-$ cd ~/microscope-deploy
-$ mup init
+mkdir ~/microscope-deploy
+cd ~/microscope-deploy
+mup init
 ~~~
 
 <% note do %>
@@ -169,23 +159,23 @@ $ mup init
 
 ////
 
-**Server Authentication**
+////
+
+////
 
 ////
 
 ////
 
-**MongoDB Configuration**
+////
+
+////
 
 ////
 
 ////
 
-**Meteor App Path**
-
 ////
-
-**Environment Variables**
 
 ////
 
@@ -194,13 +184,13 @@ $ mup init
 ////
 
 ~~~bash
-$ mup setup
+mup setup
 ~~~
 
 ////
 
 ~~~bash
-$ mup deploy
+mup deploy
 ~~~
 
 ////
@@ -210,7 +200,7 @@ $ mup deploy
 ////
 
 ~~~bash
-$ mup logs -f
+mup logs -f
 ~~~
 
 ////

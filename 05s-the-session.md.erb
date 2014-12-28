@@ -5,7 +5,7 @@ date: 0005/01/02
 number: 5.5
 sidebar: true
 contents: Learn about the Meteor Session|Learn about the autorun function|Learn about Hot Code Reload
-paragraphs: 33
+paragraphs: 36
 ---
 
 ////
@@ -36,20 +36,28 @@ paragraphs: 33
 ////
 
 ~~~html
-<header class="navbar">
-  <div class="navbar-inner">
-    <a class="brand" href="{{pathFor 'postsList'}}">{{pageTitle}}</a>
+<header class="navbar navbar-default" role="navigation"> 
+  <div class="navbar-header">
+    <a class="navbar-brand" href="{{pathFor 'postsList'}}">{{pageTitle}}</a>
   </div>
 </header>
 ~~~
-<%= caption "client/views/application/layout.html"%>
+<%= caption "client/templates/application/layout.html"%>
 
 ~~~js
 Template.layout.helpers({
   pageTitle: function() { return Session.get('pageTitle'); }
 });
 ~~~
-<%= caption "client/views/application/layout.js"%>
+<%= caption "client/templates/application/layout.js"%>
+
+<% note do %>
+
+### A Note About Sidebar Code
+
+////
+
+<% end %>
 
 ////
 
@@ -59,6 +67,8 @@ Template.layout.helpers({
 ❯ Session.set('pageTitle', 'A brand new title');
 ~~~
 <%= caption "Browser console" %>
+
+////
 
 ////
 
@@ -89,7 +99,7 @@ helloWorld = function() {
 ////
 
 ~~~js
-❯ Deps.autorun( function() { console.log('Value is: ' + Session.get('pageTitle')); } );
+❯ Tracker.autorun( function() { console.log('Value is: ' + Session.get('pageTitle')); } );
 Value is: A brand new title
 ~~~
 <%= caption "Browser console" %>
@@ -107,7 +117,7 @@ Value is: Yet another value
 ////
 
 ~~~js
-Deps.autorun(function() {
+Tracker.autorun(function() {
   alert(Session.get('message'));
 });
 ~~~
@@ -153,5 +163,7 @@ null
 
 ////
 
-1. ////
-2. ////
+////
+////
+
+////
