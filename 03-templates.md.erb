@@ -3,8 +3,8 @@ title: Templates
 slug: templates
 date: 0003/01/01
 number: 3
-contents: Learn about Meteor's templating language, Handlebars.|Create your first three templates.|Learn how Meteor managers work.|Get a basic prototype working with static data.
-paragraphs: 46
+contents: Learn about Meteor's templating language, Spacebars.|Create your first three templates.|Learn how Meteor managers work.|Get a basic prototype working with static data.
+paragraphs: 44
 ---
 
 ////
@@ -19,9 +19,9 @@ paragraphs: 46
 </head>
 <body>
   <div class="container">
-    <header class="navbar">
-      <div class="navbar-inner">
-        <a class="brand" href="/">Microscope</a>
+    <header class="navbar navbar-default" role="navigation"> 
+      <div class="navbar-header">
+        <a class="navbar-brand" href="/">Microscope</a>
       </div>
     </header>
     <div id="main" class="row-fluid">
@@ -61,7 +61,7 @@ paragraphs: 46
   </div>
 </template>
 ~~~
-<%= caption "client/views/posts/posts_list.html" %>
+<%= caption "client/templates/posts/posts_list.html" %>
 
 ////
 
@@ -74,7 +74,7 @@ paragraphs: 46
   </div>
 </template>
 ~~~
-<%= caption "client/views/posts/post_item.html" %>
+<%= caption "client/templates/posts/post_item.html" %>
 
 ////
 
@@ -102,9 +102,7 @@ paragraphs: 46
 
 ////
 
-////
-
-### Template Managers
+### Template Helpers
 
 ////
 
@@ -114,9 +112,7 @@ paragraphs: 46
 
 <% note do %>
 
-### Managers?
-
-////
+### Controllers?
 
 ////
 
@@ -130,17 +126,14 @@ paragraphs: 46
 var postsData = [
   {
     title: 'Introducing Telescope',
-    author: 'Sacha Greif',
     url: 'http://sachagreif.com/introducing-telescope/'
   }, 
   {
     title: 'Meteor',
-    author: 'Tom Coleman',
     url: 'http://meteor.com'
   }, 
   {
     title: 'The Meteor Book',
-    author: 'Tom Coleman',
     url: 'http://themeteorbook.com'
   }
 ];
@@ -148,13 +141,11 @@ Template.postsList.helpers({
   posts: postsData
 });
 ~~~
-<%= caption "client/views/posts/posts_list.js" %>
+<%= caption "client/templates/posts/posts_list.js" %>
 
 ////
 
 <%= screenshot "3-1", "Our first templates with static data" %>
-
-<%= commit "3-1", "Added basic posts list template and static data." %>
 
 ////
 
@@ -171,11 +162,13 @@ Template.postsList.helpers({
   </div>
 </template>
 ~~~
-<%= caption "client/views/posts/posts_list.html" %>
+<%= caption "client/templates/posts/posts_list.html" %>
 
 ////
 
-### The Value of "this"
+<%= commit "3-1", "Added basic posts list template and static data." %>
+
+### The `domain` Helper
 
 ////
 
@@ -188,9 +181,7 @@ Template.postItem.helpers({
   }
 });
 ~~~
-<%= caption "client/views/posts/post_item.js" %>
-
-<%= commit "3-2", "Setup a `domain` helper on the `postItem`." %>
+<%= caption "client/templates/posts/post_item.js" %>
 
 ////
 
@@ -203,6 +194,8 @@ Template.postItem.helpers({
 ////
 
 ////
+
+<%= commit "3-2", "Setup a `domain` helper on the `postItem`." %>
 
 <% note do %>
 

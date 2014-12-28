@@ -4,7 +4,7 @@ slug: collections
 date: 0004/01/01
 number: 4
 contents: Learn about Meteor's core feature, realtime collections.|Understand how Meteor's data synchronization works.|Integrate collections with our templates.|Turn our basic prototype into a functioning realtime application!
-paragraphs: 72
+paragraphs: 78
 ---
 
 ////
@@ -17,18 +17,12 @@ paragraphs: 72
 
 ////
 
-////
-
-////
-
 ~~~js
-Posts = new Meteor.Collection('posts');
+Posts = new Mongo.Collection('posts');
 ~~~
-<%= caption "collections/posts.js" %>
+<%= caption "lib/collections/posts.js" %>
 
 <%= commit "4-1", "Added a posts collection" %>
-
-////
 
 <% note do %>
 
@@ -37,6 +31,22 @@ Posts = new Meteor.Collection('posts');
 ////
 
 <% end %>
+
+### Storing Data
+
+////
+
+- ////
+- ////
+- ////
+
+////
+
+### Client & Server
+
+////
+
+////
 
 ////
 
@@ -84,6 +94,8 @@ Posts = new Meteor.Collection('posts');
 ////
 
 ~~~bash
+meteor mongo
+
 > db.posts.insert({title: "A new post"});
 
 > db.posts.find();
@@ -120,6 +132,8 @@ Posts = new Meteor.Collection('posts');
 <% end %>
 
 ### Client-Server Communication
+
+////
 
 ////
 
@@ -176,12 +190,6 @@ Posts = new Meteor.Collection('posts');
 
 ////
 
-### Keeping it Real-time
-
-////
-
-////
-
 ### Populating the Database
 
 ////
@@ -190,11 +198,19 @@ Posts = new Meteor.Collection('posts');
 
 ////
 
+////
+
 ~~~bash
-$ meteor reset
+meteor reset
 ~~~
 
 ////
+
+////
+
+~~~bash
+meteor
+~~~
 
 ////
 
@@ -202,19 +218,16 @@ $ meteor reset
 if (Posts.find().count() === 0) {
   Posts.insert({
     title: 'Introducing Telescope',
-    author: 'Sacha Greif',
     url: 'http://sachagreif.com/introducing-telescope/'
   });
-  
+
   Posts.insert({
     title: 'Meteor',
-    author: 'Tom Coleman',
     url: 'http://meteor.com'
   });
-  
+
   Posts.insert({
     title: 'The Meteor Book',
-    author: 'Tom Coleman',
     url: 'http://themeteorbook.com'
   });
 }
@@ -227,7 +240,7 @@ if (Posts.find().count() === 0) {
 
 ////
 
-### Wiring the data to our HTML with helpers
+### Dynamic Data
 
 ////
 
@@ -240,6 +253,8 @@ if (Posts.find().count() === 0) {
 
 ////
 
+////
+
 ~~~js
 Template.postsList.helpers({
   posts: function() {
@@ -247,7 +262,7 @@ Template.postsList.helpers({
   }
 });
 ~~~
-<%= caption "client/views/posts/posts_list.js" %>
+<%= caption "client/templates/posts/posts_list.js" %>
 <%= highlight "2~4" %>
 
 <%= commit "4-3", "Wired collection into `postsList` template." %>
@@ -272,8 +287,8 @@ Template.postsList.helpers({
 
 ~~~js
 ❯ Posts.insert({
-  title: 'Meteor Docs', 
-  author: 'Tom Coleman', 
+  title: 'Meteor Docs',
+  author: 'Tom Coleman',
   url: 'http://docs.meteor.com'
 });
 ~~~
@@ -302,7 +317,7 @@ Template.postsList.helpers({
 ////
 
 ~~~bash
-$ meteor remove autopublish
+meteor remove autopublish
 ~~~
 
 ////
