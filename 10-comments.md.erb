@@ -5,7 +5,7 @@ complete: 100
 date: 0010/01/01
 number: 10
 contents: Display existing comments.|Add a comment posting form.|Learn how to load only the current post's comments.|Add a comment count property to posts.
-paragraphs: 34
+paragraphs: 36
 ---
 
 ////
@@ -13,15 +13,15 @@ paragraphs: 34
 ////
 
 ~~~js
-Comments = new Meteor.Collection('comments');
+Comments = new Mongo.Collection('comments');
 ~~~
-<%= caption "collections/comments.js" %>
+<%= caption "lib/collections/comments.js" %>
 
 ~~~js
-// Fixture data 
+// Fixture data
 if (Posts.find().count() === 0) {
   var now = new Date().getTime();
-  
+
   // create two users
   var tomId = Meteor.users.insert({
     profile: { name: 'Tom Coleman' }
@@ -31,45 +31,45 @@ if (Posts.find().count() === 0) {
     profile: { name: 'Sacha Greif' }
   });
   var sacha = Meteor.users.findOne(sachaId);
-  
+
   var telescopeId = Posts.insert({
     title: 'Introducing Telescope',
     userId: sacha._id,
     author: sacha.profile.name,
     url: 'http://sachagreif.com/introducing-telescope/',
-    submitted: now - 7 * 3600 * 1000
+    submitted: new Date(now - 7 * 3600 * 1000)
   });
-  
+
   Comments.insert({
     postId: telescopeId,
     userId: tom._id,
     author: tom.profile.name,
-    submitted: now - 5 * 3600 * 1000,
+    submitted: new Date(now - 5 * 3600 * 1000),
     body: 'Interesting project Sacha, can I get involved?'
   });
-  
+
   Comments.insert({
     postId: telescopeId,
     userId: sacha._id,
     author: sacha.profile.name,
-    submitted: now - 3 * 3600 * 1000,
+    submitted: new Date(now - 3 * 3600 * 1000),
     body: 'You sure can Tom!'
   });
-  
+
   Posts.insert({
     title: 'Meteor',
     userId: tom._id,
     author: tom.profile.name,
     url: 'http://meteor.com',
-    submitted: now - 10 * 3600 * 1000
+    submitted: new Date(now - 10 * 3600 * 1000)
   });
-  
+
   Posts.insert({
     title: 'The Meteor Book',
     userId: tom._id,
     author: tom.profile.name,
     url: 'http://themeteorbook.com',
-    submitted: now - 12 * 3600 * 1000
+    submitted: new Date(now - 12 * 3600 * 1000)
   });
 }
 ~~~
@@ -93,13 +93,14 @@ Meteor.publish('comments', function() {
 Router.configure({
   layoutTemplate: 'layout',
   loadingTemplate: 'loading',
-  waitOn: function() { 
+  notFoundTemplate: 'notFound',
+  waitOn: function() {
     return [Meteor.subscribe('posts'), Meteor.subscribe('comments')];
   }
 });
 ~~~
 <%= caption "lib/router.js" %>
-<%= highlight "4~6" %>
+<%= highlight "5~7" %>
 
 <%= commit "10-1", "Added comments collection, pub/sub and fixtures." %>
 
@@ -119,12 +120,12 @@ Router.configure({
 
   <ul class="comments">
     {{#each comments}}
-      {{> comment}}
+      {{> commentItem}}
     {{/each}}
   </ul>
 </template>
 ~~~
-<%= caption "client/views/posts/post_page.html" %>
+<%= caption "client/templates/posts/post_page.html" %>
 <%= highlight "3~7" %>
 
 ~~~js
@@ -134,7 +135,7 @@ Template.postPage.helpers({
   }
 });
 ~~~
-<%= caption "client/views/posts/post_page.js" %>
+<%= caption "client/templates/posts/post_page.js" %>
 <%= highlight "2~4" %>
 
 ////
@@ -142,7 +143,7 @@ Template.postPage.helpers({
 ////
 
 ~~~html
-<template name="comment">
+<template name="commentItem">
   <li>
     <h4>
       <span class="author">{{author}}</span>
@@ -152,18 +153,18 @@ Template.postPage.helpers({
   </li>
 </template>
 ~~~
-<%= caption "client/views/comments/comment.html" %>
+<%= caption "client/templates/comments/comment_item.html" %>
 
 ////
 
 ~~~js
-Template.comment.helpers({
+Template.commentItem.helpers({
   submittedText: function() {
-    return new Date(this.submitted).toString();
+    return this.submitted.toString();
   }
 });
 ~~~
-<%= caption "client/views/comments/comment.js" %>
+<%= caption "client/templates/comments/comment_item.js" %>
 
 ////
 
@@ -178,11 +179,11 @@ Template.comment.helpers({
         {{#if ownPost}}<a href="{{pathFor 'postEdit'}}">Edit</a>{{/if}}
       </p>
     </div>
-    <a href="{{pathFor 'postPage'}}" class="discuss btn">Discuss</a>
+    <a href="{{pathFor 'postPage'}}" class="discuss btn btn-default">Discuss</a>
   </div>
 </template>
 ~~~
-<%= caption "client/views/posts/post_item.html" %>
+<%= caption "client/templates/posts/post_item.html" %>
 <%= highlight "6,7" %>
 
 ////
@@ -190,7 +191,7 @@ Template.comment.helpers({
 ~~~js
 Template.postItem.helpers({
   ownPost: function() {
-    return this.userId == Meteor.userId();
+    return this.userId === Meteor.userId();
   },
   domain: function() {
     var a = document.createElement('a');
@@ -202,7 +203,7 @@ Template.postItem.helpers({
   }
 });
 ~~~
-<%= caption "client/views/posts/post_item.js" %>
+<%= caption "client/templates/posts/post_item.js" %>
 <%= highlight "9,10,11" %>
 
 <%= commit "10-2", "Display comments on `postPage`." %>
@@ -220,13 +221,13 @@ Template.postItem.helpers({
 ~~~html
 <template name="postPage">
   {{> postItem}}
-  
+
   <ul class="comments">
     {{#each comments}}
-      {{> comment}}
+      {{> commentItem}}
     {{/each}}
   </ul>
-  
+
   {{#if currentUser}}
     {{> commentSubmit}}
   {{else}}
@@ -234,35 +235,43 @@ Template.postItem.helpers({
   {{/if}}
 </template>
 ~~~
-<%= caption "client/views/posts/post_page.html" %>
-<%= highlight "11~15" %>
+<%= caption "client/templates/posts/post_page.html" %>
+<%= highlight "10~14" %>
 
 ////
 
 ~~~html
 <template name="commentSubmit">
-  <form name="comment" class="comment-form">
-    <div class="control-group">
+  <form name="comment" class="comment-form form">
+    <div class="form-group {{errorClass 'body'}}">
         <div class="controls">
             <label for="body">Comment on this post</label>
-            <textarea name="body"></textarea>
+            <textarea name="body" id="body" class="form-control" rows="3"></textarea>
+            <span class="help-block">{{errorMessage 'body'}}</span>
         </div>
     </div>
-    <div class="control-group">
-        <div class="controls">
-            <button type="submit" class="btn">Add Comment</button>
-        </div>
-    </div>
+    <button type="submit" class="btn btn-primary">Add Comment</button>
   </form>
 </template>
 ~~~
-<%= caption "client/views/comments/comment_submit.html" %>
-
-<%= screenshot "10-2", "The comment submit form" %>
+<%= caption "client/templates/comments/comment_submit.html" %>
 
 ////
 
 ~~~js
+Template.commentSubmit.created = function() {
+  Session.set('commentSubmitErrors', {});
+}
+
+Template.commentSubmit.helpers({
+  errorMessage: function(field) {
+    return Session.get('commentSubmitErrors')[field];
+  },
+  errorClass: function (field) {
+    return !!Session.get('commentSubmitErrors')[field] ? 'has-error' : '';
+  }
+});
+
 Template.commentSubmit.events({
   'submit form': function(e, template) {
     e.preventDefault();
@@ -273,7 +282,13 @@ Template.commentSubmit.events({
       postId: template.data._id
     };
     
-    Meteor.call('comment', comment, function(error, commentId) {
+    var errors = {};
+    if (! comment.body) {
+      errors.body = "Please write some content";
+      return Session.set('commentSubmitErrors', errors);
+    }
+    
+    Meteor.call('commentInsert', comment, function(error, commentId) {
       if (error){
         throwError(error.reason);
       } else {
@@ -283,43 +298,45 @@ Template.commentSubmit.events({
   }
 });
 ~~~
-<%= caption "client/views/comments/comment_submit.js" %>
+<%= caption "client/templates/comments/comment_submit.js" %>
 
 ////
 
 ~~~js
-Comments = new Meteor.Collection('comments');
+Comments = new Mongo.Collection('comments');
 
 Meteor.methods({
-  comment: function(commentAttributes) {
+  commentInsert: function(commentAttributes) {
+    check(this.userId, String);
+    check(commentAttributes, {
+      postId: String,
+      body: String
+    });
+    
     var user = Meteor.user();
     var post = Posts.findOne(commentAttributes.postId);
-    // ensure the user is logged in
-    if (!user)
-      throw new Meteor.Error(401, "You need to login to make comments");
-      
-    if (!commentAttributes.body)
-      throw new Meteor.Error(422, 'Please write some content');
-      
+
     if (!post)
-      throw new Meteor.Error(422, 'You must comment on a post');
+      throw new Meteor.Error('invalid-comment', 'You must comment on a post');
     
-    comment = _.extend(_.pick(commentAttributes, 'postId', 'body'), {
+    comment = _.extend(commentAttributes, {
       userId: user._id,
       author: user.username,
-      submitted: new Date().getTime()
+      submitted: new Date()
     });
     
     return Comments.insert(comment);
   }
 });
 ~~~
-<%= caption "collections/comments.js" %>
+<%= caption "lib/collections/comments.js" %>
 <%= highlight "3~25" %>
 
 <%= commit "10-3", "Created a form to submit comments." %>
 
 ////
+
+<%= screenshot "10-2", "The comment submit form" %>
 
 ### Controlling the Comments Subscription
 
@@ -336,24 +353,35 @@ Meteor.methods({
 ////
 
 ~~~js
-Router.map(function() {
-
-  //...
-
-  this.route('postPage', {
-    path: '/posts/:_id',
-    waitOn: function() {
-      return Meteor.subscribe('comments', this.params._id);
-    },
-    data: function() { return Posts.findOne(this.params._id); }
-  });
-
-  //...
-
+Router.configure({
+  layoutTemplate: 'layout',
+  loadingTemplate: 'loading',
+  notFoundTemplate: 'notFound',
+  waitOn: function() {
+    return Meteor.subscribe('posts');
+  }
 });
 ~~~
 <%= caption "lib/router.js" %>
-<%= highlight "7~9" %>
+<%= highlight "5" %>
+
+////
+
+~~~js
+//...
+
+Router.route('/posts/:_id', {
+  name: 'postPage',
+  waitOn: function() {
+    return Meteor.subscribe('comments', this.params._id);
+  },
+  data: function() { return Posts.findOne(this.params._id); }
+});
+
+//...
+~~~
+<%= caption "lib/router.js" %>
+<%= highlight "5~7" %>
 
 ////
 
@@ -363,6 +391,7 @@ Meteor.publish('posts', function() {
 });
 
 Meteor.publish('comments', function(postId) {
+  check(postId, String);
   return Comments.find({postId: postId});
 });
 ~~~
@@ -384,50 +413,108 @@ Meteor.publish('comments', function(postId) {
 ////
 
 ~~~js
-var telescopeId = Posts.insert({
-  title: 'Introducing Telescope',
-  ..
-  commentsCount: 2
-});
-
-Posts.insert({
-  title: 'Meteor',
-  ...
-  commentsCount: 0
-});
-
-Posts.insert({
-  title: 'The Meteor Book',
-  ...
-  commentsCount: 0
-});
+// Fixture data 
+if (Posts.find().count() === 0) {
+  var now = new Date().getTime();
+  
+  // create two users
+  var tomId = Meteor.users.insert({
+    profile: { name: 'Tom Coleman' }
+  });
+  var tom = Meteor.users.findOne(tomId);
+  var sachaId = Meteor.users.insert({
+    profile: { name: 'Sacha Greif' }
+  });
+  var sacha = Meteor.users.findOne(sachaId);
+  
+  var telescopeId = Posts.insert({
+    title: 'Introducing Telescope',
+    userId: sacha._id,
+    author: sacha.profile.name,
+    url: 'http://sachagreif.com/introducing-telescope/',
+    submitted: new Date(now - 7 * 3600 * 1000),
+    commentsCount: 2
+  });
+  
+  Comments.insert({
+    postId: telescopeId,
+    userId: tom._id,
+    author: tom.profile.name,
+    submitted: new Date(now - 5 * 3600 * 1000),
+    body: 'Interesting project Sacha, can I get involved?'
+  });
+  
+  Comments.insert({
+    postId: telescopeId,
+    userId: sacha._id,
+    author: sacha.profile.name,
+    submitted: new Date(now - 3 * 3600 * 1000),
+    body: 'You sure can Tom!'
+  });
+  
+  Posts.insert({
+    title: 'Meteor',
+    userId: tom._id,
+    author: tom.profile.name,
+    url: 'http://meteor.com',
+    submitted: new Date(now - 10 * 3600 * 1000),
+    commentsCount: 0
+  });
+  
+  Posts.insert({
+    title: 'The Meteor Book',
+    userId: tom._id,
+    author: tom.profile.name,
+    url: 'http://themeteorbook.com',
+    submitted: new Date(now - 12 * 3600 * 1000),
+    commentsCount: 0
+  });
+}
 ~~~
 <%= caption "server/fixtures.js" %>
+<%= highlight "20,21,45,46,54,55" %>
+
+////
 
 ////
 
 ~~~js
-// pick out the whitelisted keys
-var post = _.extend(_.pick(postAttributes, 'url', 'title', 'message'), {
-  userId: user._id, 
-  author: user.username, 
-  submitted: new Date().getTime(),
+//...
+
+var post = _.extend(postAttributes, {
+  userId: user._id,
+  author: user.username,
+  submitted: new Date(),
   commentsCount: 0
 });
 
 var postId = Posts.insert(post);
+
+//...
 ~~~
 <%= caption "collections/posts.js" %>
+<%= highlight "6,7" %>
 
 ////
 
 ~~~js
+//...
+
+comment = _.extend(commentAttributes, {
+  userId: user._id,
+  author: user.username,
+  submitted: new Date()
+});
+
 // update the post with the number of comments
 Posts.update(comment.postId, {$inc: {commentsCount: 1}});
 
 return Comments.insert(comment);
+
+//...
 ~~~
 <%= caption "collections/comments.js "%>
+<%= highlight "9,10" %>
 
 ////
 
