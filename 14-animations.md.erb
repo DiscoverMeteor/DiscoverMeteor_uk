@@ -4,8 +4,18 @@ slug: animations
 date: 0014/01/01
 number: 14
 contents: See what happens behind the scenes when Meteor swaps two DOM elements.|Learn how to animate the reordering of posts.|Learn how to animate the insertion of new posts.
-paragraphs: 58
+paragraphs: 85
 ---
+
+<% note do %>
+
+### Out of Date?
+
+////
+
+////
+
+<% end %>
 
 ////
 
@@ -17,18 +27,30 @@ paragraphs: 58
 
 ////
 
-////
-
-1. ////
-2. ////
-3. ////
-4. ////
-5. ////
-6. ////
+### The Soviet Runner
 
 ////
 
-<%= diagram "animation_diagram", "Swtiching two posts", "pull-center" %>
+////
+
+////
+
+### Breaking It Down
+
+////
+
+////
+
+////
+////
+////
+////
+////
+////
+
+////
+
+<%= diagram "animation_diagram", "Switching two posts", "pull-center" %>
 
 ////
 
@@ -90,12 +112,6 @@ paragraphs: 58
 
 ////
 
-> //// 
-
-////
-
-////
-
 ### Ranking Posts
 
 ////
@@ -109,7 +125,6 @@ paragraphs: 58
 ~~~js
 Template.postsList.helpers({
   postsWithRank: function() {
-    this.posts.rewind();
     return this.posts.map(function(post, index, cursor) {
       post._rank = index;
       return post;
@@ -117,7 +132,7 @@ Template.postsList.helpers({
   }
 });
 ~~~
-<%= caption "/client/views/posts/posts_list.js" %>
+<%= caption "/client/templates/posts/posts_list.js" %>
 <%= highlight "2~8" %>
 
 ////
@@ -137,13 +152,72 @@ Template.postsList.helpers({
   </div>
 </template>
 ~~~
-<%= caption "/client/views/posts/posts_list.html" %>
+<%= caption "/client/templates/posts/posts_list.html" %>
 
 <%= highlight "3" %>
 
+### Putting It Together
+
+////
+
+////
+////
+////
+
+////
+
+////
+////
+<%= caption "/client/templates/posts/post_item.html" %>
+<%= highlight "2" %>
+
+////
+
+////
+
+~~~js
+var POST_HEIGHT = 80;
+var Positions = new Mongo.Collection(null);
+
+Template.postItem.helpers({
+
+  //..
+  
+  },
+  attributes: function() {
+    var post = _.extend({}, Positions.findOne({postId: this._id}), this);
+    var newPosition = post._rank * POST_HEIGHT;
+    var attributes = {};
+    
+    if (! _.isUndefined(post.position)) {
+      var offset = post.position - newPosition;      
+      attributes.style = "top: " + offset + "px";
+      if (offset === 0)
+        attributes.class = "post animate"
+    }
+    
+    Meteor.setTimeout(function() {
+      Positions.upsert({postId: post._id}, {$set: {position: newPosition}})
+    });
+    
+    return attributes;
+  }
+});
+
+//..
+~~~
+<%= caption "/client/templates/posts/post_item.js" %>
+<%= highlight "1~2, 8~26" %>
+
+////
+
+////
+
+////
+
 <% note do %>
 
-### Be Kind, Rewind
+### Running Schedule
 
 ////
 
@@ -153,109 +227,81 @@ Template.postsList.helpers({
 
 <% end %>
 
-### Putting it together
+### The Attributes Helper
 
 ////
 
-~~~js
-Template.postItem.helpers({
-  //...
-});
+////
 
-Template.postItem.rendered = function(){
-  // animate post from previous position to new position
-  var instance = this;
-  var rank = instance.data._rank;
-  var $this = $(this.firstNode);
-  var postHeight = 80;
-  var newPosition = rank * postHeight;
- 
-  // if element has a currentPosition (i.e. it's not the first ever render)
-  if (typeof(instance.currentPosition) !== 'undefined') {
-    var previousPosition = instance.currentPosition;
-    // calculate difference between old position and new position and send element there
-    var delta = previousPosition - newPosition;
-    $this.css("top", delta + "px");
-  }
-  
-  // let it draw in the old position, then..
-  Meteor.defer(function() {
-    instance.currentPosition = newPosition;
-    // bring element back to its new original position
-    $this.css("top",  "0px");
-  }); 
-};
+////
 
-Template.postItem.events({
-  //...
-});
-~~~
-<%= caption "/client/views/posts/post_item.js" %>
-<%= highlight "5~27" %>
+////
+
+////
+
+////
+
+### Timing Out
+
+////
+
+////
+
+- ////
+- ////
+- ////
+- ////
+- ////
+
+////
+
+- ////
+- ////
+- ////
+- ////
+- ////
+- ////
+
+////
 
 <%= commit "14-1", "Added post reordering animation." %>
-
-////
-
-////
-
-////
 
 ### Animating New Posts
 
 ////
 
-////
-
-1. ////
-2. ////
-
-////
-
-////
-
 ~~~js
-Template.postItem.helpers({
-  //...
-});
+//..
 
-Template.postItem.rendered = function(){
-  // animate post from previous position to new position
-  var instance = this;
-  var rank = instance.data._rank;
-  var $this = $(this.firstNode);
-  var postHeight = 80;
-  var newPosition = rank * postHeight;
+attributes: function() {
+  var post = _.extend({}, Positions.findOne({postId: this._id}), this);
+  var newPosition = post._rank * POST_HEIGHT;
+  var attributes = {};
   
-  // if element has a currentPosition (i.e. it's not the first ever render)
-  if (typeof(instance.currentPosition) !== 'undefined') {
-    var previousPosition = instance.currentPosition;
-    // calculate difference between old position and new position and send element there
-    var delta = previousPosition - newPosition;
-    $this.css("top", delta + "px");
+  if (_.isUndefined(post.position)) {
+    attributes.class = 'post invisible';
   } else {
-    // it's the first ever render, so hide element
-    $this.addClass("invisible");
+    var delta = post.position - newPosition;      
+    attributes.style = "top: " + delta + "px";
+    if (delta === 0)
+      attributes.class = "post animate"
   }
   
-  // let it draw in the old position, then..
-  Meteor.defer(function() {
-    instance.currentPosition = newPosition;
-    // bring element back to its new original position
-    $this.css("top",  "0px").removeClass("invisible");
-  }); 
-};
+  Meteor.setTimeout(function() {
+    Positions.upsert({postId: post._id}, {$set: {position: newPosition}})
+  });
+  
+  return attributes;
+}
 
-Template.postItem.events({
-  //...
-});
+//..
 ~~~
-<%= caption "/client/views/posts/post_item.js" %>
-<%= highlight "19~22,28" %>
-
-<%= commit "14-2", "Fade items in when they are drawn." %>
+<%= caption "/client/templates/posts/post_item.js" %>
+<%= highlight "8~10" %>
 
 ////
+
+<%= commit "14-2", "Fade items in when they are drawn." %>
 
 <% note do %>
 
