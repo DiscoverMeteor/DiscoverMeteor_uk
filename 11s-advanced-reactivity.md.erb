@@ -4,8 +4,8 @@ slug: advanced-reactivity
 date: 0011/01/02
 number: 11.5
 sidebar: true
-contents: Learn about how to create reactive data sources in Meteor.|Create a simple example of a reactive data source.|See how Deps compares to AngularJS.
-paragraphs: 29
+contents: Learn about how to create reactive data sources in Meteor.|Create a simple example of a reactive data source.|See how Tracker compares to AngularJS.
+paragraphs: 26
 ---
 
 ////
@@ -21,7 +21,7 @@ currentLikeCount = 0;
 Meteor.setInterval(function() {
   var postId;
   if (Meteor.user() && postId = Session.get('currentPostId')) {
-    getFacebookLikeCount(Meteor.user(), Posts.find(postId), 
+    getFacebookLikeCount(Meteor.user(), Posts.find(postId).url, 
       function(err, count) {
         if (!err)
           currentLikeCount = count;
@@ -54,7 +54,7 @@ Template.postItem.likeCount = function() {
 
 ~~~js
 var _currentLikeCount = 0;
-var _currentLikeCountListeners = new Deps.Dependency();
+var _currentLikeCountListeners = new Tracker.Dependency();
 
 currentLikeCount = function() {
   _currentLikeCountListeners.depend();
@@ -80,21 +80,35 @@ Meteor.setInterval(function() {
 
 ////
 
-### Template Computation and Controlling Redraws
+////
+
+~~~bash
+meteor add reactive-var
+~~~
 
 ////
 
-////
+~~~js
+var currentLikeCount = new ReactiveVar();
+
+Meteor.setInterval(function() {
+  var postId;
+  if (Meteor.user() && postId = Session.get('currentPostId')) {
+    getFacebookLikeCount(Meteor.user(), Posts.find(postId), 
+      function(err, count) {
+        if (!err) {
+          currentLikeCount.set(count);
+        }
+      });
+  }
+}, 5 * 1000);
+~~~
+<%= highlight "1,9" %>
 
 ////
 
-////
 
-////
-
-////
-
-### Comparing Deps to Angular
+### Comparing Tracker to Angular
 
 ////
 

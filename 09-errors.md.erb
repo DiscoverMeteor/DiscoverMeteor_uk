@@ -3,9 +3,11 @@ title: Errors
 slug: errors
 date: 0009/01/01
 number: 9
-contents: Create a better mechanism for displaying errors and messages.|Learn how to use `Template.rendered` to know when a user has seen an error.|Use a router filter to make sure errors are only seen once.
-paragraphs: 31
+contents: Create a better mechanism for displaying errors and messages.|Implement stricter form validation.|Add in-line error reporting to our forms.
+paragraphs: 56
 ---
+
+////
 
 ////
 
@@ -17,13 +19,9 @@ paragraphs: 31
 
 ////
 
-////
-
-////
-
 ~~~js
 // Local (client-only) collection
-Errors = new Meteor.Collection(null);
+Errors = new Mongo.Collection(null);
 ~~~
 <%= caption "client/helpers/errors.js" %>
 
@@ -31,14 +29,14 @@ Errors = new Meteor.Collection(null);
 
 ~~~js
 throwError = function(message) {
-  Errors.insert({message: message})
-}
+  Errors.insert({message: message});
+};
 ~~~
 <%= caption "client/helpers/errors.js" %>
 
 ////
 
-### Displaying errors
+### Displaying Errors
 
 ////
 
@@ -48,19 +46,19 @@ throwError = function(message) {
     {{> header}}
     {{> errors}}
     <div id="main" class="row-fluid">
-      {{yield}}
+      {{> yield}}
     </div>
   </div>
 </template>
 ~~~
-<%= caption "client/views/application/layout.html" %>
-<%= highlight "7" %>
+<%= caption "client/templates/application/layout.html" %>
+<%= highlight "4" %>
 
 ////
 
 ~~~html
 <template name="errors">
-  <div class="errors row-fluid">
+  <div class="errors">
     {{#each errors}}
       {{> error}}
     {{/each}}
@@ -68,13 +66,13 @@ throwError = function(message) {
 </template>
 
 <template name="error">
-  <div class="alert alert-error">
+  <div class="alert alert-danger" role="alert">
     <button type="button" class="close" data-dismiss="alert">&times;</button>
     {{message}}
   </div>
 </template>
 ~~~
-<%= caption "client/views/includes/errors.html" %>
+<%= caption "client/templates/includes/errors.html" %>
 
 <% note do %>
 
@@ -95,13 +93,33 @@ Template.errors.helpers({
   }
 });
 ~~~
-<%= caption "client/views/includes/errors.js" %>
+<%= caption "client/templates/includes/errors.js" %>
+
+////
+
+~~~js
+throwError("I'm an error!");
+~~~
+
+<%= screenshot "9-1", "Testing error messages." %>
 
 <%= commit "9-1", "Basic error reporting." %>
 
-### Creating errors
+<% note do %>
+
+### Two Kinds of Errors
 
 ////
+
+////
+
+////
+
+////
+
+<% end %>
+
+### Creating errors
 
 ////
 
@@ -112,74 +130,99 @@ Template.postSubmit.events({
     
     var post = {
       url: $(e.target).find('[name=url]').val(),
-      title: $(e.target).find('[name=title]').val(),
-      message: $(e.target).find('[name=message]').val()
-    }
+      title: $(e.target).find('[name=title]').val()
+    };
     
-    Meteor.call('post', post, function(error, id) {
-      if (error) {
-        // display the error to the user
-        throwError(error.reason);
-        
-        if (error.error === 302)
-          Router.go('postPage', {_id: error.details})
-      } else {
-        Router.go('postPage', {_id: id});
-      }
+    Meteor.call('postInsert', post, function(error, result) {
+      // display the error to the user and abort
+      if (error)
+        return throwError(error.reason);
+      
+      // show this result but route anyway
+      if (result.postExists)
+        throwError('This link has already been posted');
+    
+      Router.go('postPage', {_id: result._id});  
     });
   }
 });
 ~~~
-<%= caption "client/views/posts/post_submit.js" %>
-<%= highlight "12~14, 16~21" %>
+<%= caption "client/templates/posts/post_submit.js" %>
+<%= highlight "13,17" %>
+
+////
+
+~~~js
+Template.postEdit.events({
+  'submit form': function(e) {
+    e.preventDefault();
+    
+    var currentPostId = this._id;
+    
+    var postProperties = {
+      url: $(e.target).find('[name=url]').val(),
+      title: $(e.target).find('[name=title]').val()
+    }
+    
+    Posts.update(currentPostId, {$set: postProperties}, function(error) {
+      if (error) {
+        // display the error to the user
+        throwError(error.reason);
+      } else {
+        Router.go('postPage', {_id: currentPostId});
+      }
+    });
+  },
+  //...
+});
+~~~
+<%= caption "client/templates/posts/post_edit.js" %>
+<%= highlight "15" %>
 
 <%= commit "9-2", "Actually use the error reporting." %>
 
 ////
 
-<%= screenshot "9-1", "Triggering an error" %>
+<%= screenshot "9-2", "Triggering an error" %>
 
 ### Clearing Errors
 
 ////
 
-////
-
-////
-
-////
-
-////
-
-~~~js
-// Local (client-only) collection
-Errors = new Meteor.Collection(null);
-
-throwError = function(message) {
-  Errors.insert({message: message, seen: false})
+~~~css
+@keyframes fadeOut {
+  0% {opacity: 0;}
+  10% {opacity: 1;}
+  90% {opacity: 1;}
+  100% {opacity: 0;}
 }
 
-clearErrors = function() {
-  Errors.remove({seen: true});
+//...
+
+.alert {
+  animation: fadeOut 2700ms ease-in 0s 1 forwards;
+  //...
 }
 ~~~
-<%= caption "client/helpers/errors.js" %>
-<%= highlight "5,8~10" %>
-
-////
-
-~~~js
-// ...
-
-Router.before(requireLogin, {only: 'postSubmit'})
-Router.before(function() { clearErrors() });
-~~~
-<%= caption "lib/router.js" %>
-<%= highlight "4" %>
+<%= caption "client/stylesheets/style.css" %>
 
 ////
 
 ////
+
+<% note do %>
+
+### Animations vs Animations
+
+////
+
+////
+
+<% end %>
+
+////
+
+<%= screenshot "9-3", "Stack overflow." %>
 
 ////
 
@@ -196,26 +239,313 @@ Template.errors.helpers({
 
 Template.error.rendered = function() {
   var error = this.data;
-  Meteor.defer(function() {
-    Errors.update(error._id, {$set: {seen: true}});
-  });
+  Meteor.setTimeout(function () {
+    Errors.remove(error._id);
+  }, 3000);
 };
 ~~~
-<%= caption "client/views/includes/errors.js" %>
+<%= caption "client/templates/includes/errors.js" %>
 <%= highlight "7~12" %>
 
-<%= commit "9-3", "Monitor which errors have been seen, and clear on routing." %>
+<%= commit "9-3", "Clear errors after 3 seconds." %>
+
+////
+
+### Seeking Validation
 
 ////
 
 ////
 
-<% note do %>
+////
 
-### The `rendered` callback
+~~~html
+<template name="postSubmit">
+  <form class="main form">
+    <div class="form-group {{errorClass 'url'}}">
+      <label class="control-label" for="url">URL</label>
+      <div class="controls">
+          <input name="url" id="url" type="text" value="" placeholder="Your URL" class="form-control"/>
+          <span class="help-block">{{errorMessage 'url'}}</span>
+      </div>
+    </div>
+    <div class="form-group {{errorClass 'title'}}">
+      <label class="control-label" for="title">Title</label>
+      <div class="controls">
+          <input name="title" id="title" type="text" value="" placeholder="Name your post" class="form-control"/>
+          <span class="help-block">{{errorMessage 'title'}}</span>
+      </div>
+    </div>
+    <input type="submit" value="Submit" class="btn btn-primary"/>
+  </form>
+</template>
+~~~
+<%= caption "client/templates/posts/post_submit.html" %>
+<%= highlight "3,7,10,14" %>
 
 ////
 
 ////
 
-<% end %>
+////
+
+////
+
+////
+
+////
+
+~~~js
+Template.postSubmit.created = function() {
+  Session.set('postSubmitErrors', {});
+}
+
+Template.postSubmit.helpers({
+  errorMessage: function(field) {
+    return Session.get('postSubmitErrors')[field];
+  },
+  errorClass: function (field) {
+    return !!Session.get('postSubmitErrors')[field] ? 'has-error' : '';
+  }
+});
+~~~
+<%= caption "client/templates/posts/post_submit.js" %>
+
+////
+
+~~~js
+Session.set('postSubmitErrors', {title: 'Warning! Intruder detected. Now releasing robo-dogs.'});
+~~~
+<%= caption "Browser console" %>
+
+<%= screenshot "9-4", "Red alert! Red alert!" %>
+
+////
+
+////
+
+~~~js
+//...
+
+validatePost = function (post) {
+  var errors = {};
+
+  if (!post.title)
+    errors.title = "Please fill in a headline";
+  
+  if (!post.url)
+    errors.url =  "Please fill in a URL";
+
+  return errors;
+}
+
+//...
+~~~
+<%= caption "lib/collections/posts.js" %>
+<%= highlight "3~13" %>
+
+////
+
+~~~js
+Template.postSubmit.events({
+  'submit form': function(e) {
+    e.preventDefault();
+    
+    var post = {
+      url: $(e.target).find('[name=url]').val(),
+      title: $(e.target).find('[name=title]').val()
+    };
+    
+    var errors = validatePost(post);
+    if (errors.title || errors.url)
+      return Session.set('postSubmitErrors', errors);
+    
+    Meteor.call('postInsert', post, function(error, result) {
+      // display the error to the user and abort
+      if (error)
+        return throwError(error.reason);
+      
+      // show this result but route anyway
+      if (result.postExists)
+        throwError('This link has already been posted');
+    
+      Router.go('postPage', {_id: result._id});  
+    });
+  }
+});
+~~~
+<%= caption "client/templates/posts/post_submit.js" %>
+<%= highlight "10~12" %>
+
+////
+
+<%= screenshot "9-5", "Caught red-handed." %>
+
+### Server-side Validation
+
+////
+
+////
+
+~~~js
+Meteor.methods({
+  postInsert: function(postAttributes) {
+    check(this.userId, String);
+    check(postAttributes, {
+      title: String,
+      url: String
+    });
+    
+    var errors = validatePost(postAttributes);
+    if (errors.title || errors.url)
+      throw new Meteor.Error('invalid-post', "You must set a title and URL for your post");
+    
+    var postWithSameLink = Posts.findOne({url: postAttributes.url});
+    if (postWithSameLink) {
+      return {
+        postExists: true,
+        _id: postWithSameLink._id
+      }
+    }
+    
+    var user = Meteor.user();
+    var post = _.extend(postAttributes, {
+      userId: user._id, 
+      author: user.username, 
+      submitted: new Date()
+    });
+    
+    var postId = Posts.insert(post);
+    
+    return {
+      _id: postId
+    };
+  }
+});
+~~~
+<%= caption "lib/collections/posts.js" %>
+<%= highlight "9~11" %>
+
+////
+
+////
+
+~~~js
+Meteor.call('postInsert', {url: '', title: 'No URL here!'});
+~~~
+
+////
+
+<%= commit "9-4", "Validate post contents on submission." %>
+
+### Edition Validation
+
+////
+
+~~~html
+<template name="postEdit">
+  <form class="main form">
+    <div class="form-group {{errorClass 'url'}}">
+      <label class="control-label" for="url">URL</label>
+      <div class="controls">
+          <input name="url" id="url" type="text" value="{{url}}" placeholder="Your URL" class="form-control"/>
+          <span class="help-block">{{errorMessage 'url'}}</span>
+      </div>
+    </div>
+    <div class="form-group {{errorClass 'title'}}">
+      <label class="control-label" for="title">Title</label>
+      <div class="controls">
+          <input name="title" id="title" type="text" value="{{title}}" placeholder="Name your post" class="form-control"/>
+          <span class="help-block">{{errorMessage 'title'}}</span>
+      </div>
+    </div>
+    <input type="submit" value="Submit" class="btn btn-primary submit"/>
+    <hr/>
+    <a class="btn btn-danger delete" href="#">Delete post</a>
+  </form>
+</template>
+~~~
+<%= caption "client/templates/posts/post_edit.html" %>
+<%= highlight "3,7,10,14" %>
+
+////
+
+~~~js
+Template.postEdit.created = function() {
+  Session.set('postEditErrors', {});
+}
+
+Template.postEdit.helpers({
+  errorMessage: function(field) {
+    return Session.get('postEditErrors')[field];
+  },
+  errorClass: function (field) {
+    return !!Session.get('postEditErrors')[field] ? 'has-error' : '';
+  }
+});
+
+Template.postEdit.events({
+  'submit form': function(e) {
+    e.preventDefault();
+    
+    var currentPostId = this._id;
+    
+    var postProperties = {
+      url: $(e.target).find('[name=url]').val(),
+      title: $(e.target).find('[name=title]').val()
+    }
+    
+    var errors = validatePost(postProperties);
+    if (errors.title || errors.url)
+      return Session.set('postEditErrors', errors);
+    
+    Posts.update(currentPostId, {$set: postProperties}, function(error) {
+      if (error) {
+        // display the error to the user
+        throwError(error.reason);
+      } else {
+        Router.go('postPage', {_id: currentPostId});
+      }
+    });
+  },
+  
+  'click .delete': function(e) {
+    e.preventDefault();
+    
+    if (confirm("Delete this post?")) {
+      var currentPostId = this._id;
+      Posts.remove(currentPostId);
+      Router.go('postsList');
+    }
+  }
+});
+~~~
+<%= caption "client/templates/posts/post_edit.js" %>
+<%= highlight "1~12,25~27,32" %>
+
+////
+
+////
+
+~~~js
+//...
+
+Posts.deny({
+  update: function(userId, post, fieldNames, modifier) {
+    var errors = validatePost(modifier.$set);
+    return errors.title || errors.url;
+  }
+});
+
+//...
+~~~
+<%= caption "lib/collections/posts.js" %>
+<%= highlight "3~8" %>
+
+////
+
+////
+
+////
+
+<%= commit "9-5", "Validate post contents when editing." %>
