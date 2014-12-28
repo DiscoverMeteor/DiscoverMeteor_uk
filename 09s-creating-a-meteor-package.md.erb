@@ -1,0 +1,209 @@
+---
+title: Creating a Meteor Package
+slug: creating-a-meteor-package
+date: 0009/01/02
+number: 9.5
+sidebar: true
+contents: Write a local in-app package.|Write some tests for your package.|Release your package on Atmosphere.
+paragraphs: 19
+---
+
+////
+
+////
+
+////
+
+////
+
+~~~js
+Package.describe({
+  name: "tmeasday:errors",
+  summary: "A pattern to display application errors to the user",
+  version: "1.0.0"
+});
+
+Package.onUse(function (api, where) {
+  api.versionsFrom('0.9.0');
+  
+  api.use(['minimongo', 'mongo-livedata', 'templating'], 'client');
+
+  api.addFiles(['errors.js', 'errors_list.html', 'errors_list.js'], 'client');
+  
+  if (api.export) 
+    api.export('Errors');
+});
+~~~
+<%= caption "packages/tmeasday:errors/package.js" %>
+
+////
+
+////
+
+~~~js
+Errors = {
+  // Local (client-only) collection
+  collection: new Mongo.Collection(null),
+  
+  throw: function(message) {
+    Errors.collection.insert({message: message, seen: false})
+  }
+};
+~~~
+<%= caption "packages/tmeasday:errors/errors.js" %>
+
+~~~html
+<template name="meteorErrors">
+  <div class="errors">
+    {{#each errors}}
+      {{> meteorError}}
+    {{/each}}
+  </div>
+</template>
+
+<template name="meteorError">
+  <div class="alert alert-danger" role="alert">
+    <button type="button" class="close" data-dismiss="alert">&times;</button>
+    {{message}}
+  </div>
+</template>
+~~~
+<%= caption "packages/tmeasday:errors/errors_list.html" %>
+
+~~~js
+Template.meteorErrors.helpers({
+  errors: function() {
+    return Errors.collection.find();
+  }
+});
+
+Template.meteorError.rendered = function() {
+  var error = this.data;
+  Meteor.setTimeout(function () {
+    Errors.collection.remove(error._id);
+  }, 3000);
+};
+~~~
+<%= caption "packages/tmeasday:errors/errors_list.js" %>
+
+### Testing the package out with Microscope
+
+////
+
+~~~bash
+rm client/helpers/errors.js
+rm client/templates/includes/errors.html
+rm client/templates/includes/errors.js
+~~~
+<%= caption "removing old files on the bash console" %>
+
+////
+
+~~~html
+  {{> header}}
+  {{> meteorErrors}}
+~~~
+<%= caption "client/templates/application/layout.html" %>
+
+~~~js
+Meteor.call('postInsert', post, function(error, result) {
+  if (error) {
+    // display the error to the user
+    Errors.throw(error.reason);
+
+~~~
+<%= caption "client/templates/posts/post_submit.js" %>
+
+~~~js
+Posts.update(currentPostId, {$set: postProperties}, function(error) {
+  if (error) {
+    // display the error to the user
+    Errors.throw(error.reason);
+~~~
+<%= caption "client/templates/posts/post_edit.js" %>
+
+<%= scommit "9-5-1", "Created basic errors package and linked it in." %>
+
+////
+
+### Writing tests
+
+////
+
+////
+
+~~~js
+Tinytest.add("Errors - collection", function(test) {
+  test.equal(Errors.collection.find({}).count(), 0);
+  
+  Errors.throw('A new error!');
+  test.equal(Errors.collection.find({}).count(), 1);
+  
+  Errors.collection.remove({});
+});
+
+Tinytest.addAsync("Errors - template", function(test, done) {  
+  Errors.throw('A new error!');
+  test.equal(Errors.collection.find({}).count(), 1);
+  
+  // render the template
+  UI.insert(UI.render(Template.meteorErrors), document.body);
+  
+  Meteor.setTimeout(function() {
+    test.equal(Errors.collection.find({}).count(), 0);
+    done();
+  }, 3500);
+});
+~~~
+<%= caption "packages/tmeasday:errors/errors_tests.js" %>
+
+////
+
+////
+
+////
+
+~~~js
+Package.onTest(function(api) {
+  api.use('tmeasday:errors', 'client');
+  api.use(['tinytest', 'test-helpers'], 'client');  
+  
+  api.addFiles('errors_tests.js', 'client');
+});
+~~~
+<%= caption "packages/tmeasday:errors/package.js" %>
+
+<%= scommit "9-5-2", "Added tests to the package." %>
+
+////
+
+~~~bash
+meteor test-packages tmeasday:errors
+~~~
+<%= caption "Terminal" %>
+
+<%= screenshot "s7-1", "Passing all tests" %>
+
+### Releasing the package
+
+////
+
+////
+
+~~~bash
+cd packages/tmeasday:errors
+meteor publish --create
+~~~
+<%= caption "Terminal" %>
+
+////
+
+~~~bash
+rm -r packages/errors
+meteor add tmeasday:errors
+~~~
+<%= caption "Terminal (run from the top level of the app)" %>
+
+<%= scommit "9-5-4", "Removed package from development tree." %>
+
+////

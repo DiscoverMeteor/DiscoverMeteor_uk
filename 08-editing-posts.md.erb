@@ -4,7 +4,7 @@ slug: editing-posts
 date: 0008/01/01
 number: 8
 contents: Add a form for editing your posts.|Set up edit permissions.|Restrict which properties can be edited.
-paragraphs: 29
+paragraphs: 30
 ---
 
 ////
@@ -13,42 +13,43 @@ paragraphs: 29
 
 ~~~js
 Router.configure({
-  layoutTemplate: 'layout'
+  layoutTemplate: 'layout',
+  loadingTemplate: 'loading',
+  notFoundTemplate: 'notFound',
+  waitOn: function() { return Meteor.subscribe('posts'); }
 });
 
-Router.map(function() {
-  this.route('postsList', {path: '/'});
+Router.route('/', {name: 'postsList'});
 
-  this.route('postPage', {
-    path: '/posts/:_id',
-    data: function() { return Posts.findOne(this.params._id); }
-  });
-
-  this.route('postEdit', {
-    path: '/posts/:_id/edit',
-    data: function() { return Posts.findOne(this.params._id); }
-  });
-
-  this.route('postSubmit', {
-    path: '/submit'
-  });
+Router.route('/posts/:_id', {
+  name: 'postPage',
+  data: function() { return Posts.findOne(this.params._id); }
 });
+
+Router.route('/posts/:_id/edit', {
+  name: 'postEdit',
+  data: function() { return Posts.findOne(this.params._id); }
+});
+
+Router.route('/submit', {name: 'postSubmit'});
 
 var requireLogin = function() {
   if (! Meteor.user()) {
-    if (Meteor.loggingIn())
-      this.render('loading')
-    else
+    if (Meteor.loggingIn()) {
+      this.render(this.loadingTemplate);
+    } else {
       this.render('accessDenied');
-  
-    this.stop();
+    }
+  } else {
+    this.next();
   }
 }
 
-Router.before(requireLogin, {only: 'postSubmit'});
+Router.onBeforeAction('dataNotFound', {only: 'postPage'});
+Router.onBeforeAction(requireLogin, {only: 'postSubmit'});
 ~~~
 <%= caption "lib/router.js" %>
-<%= highlight "12~15" %>
+<%= highlight "15~18" %>
 
 ### The Post Edit Template
 
@@ -56,36 +57,26 @@ Router.before(requireLogin, {only: 'postSubmit'});
 
 ~~~html
 <template name="postEdit">
-  <form class="main">
-    <div class="control-group">
-        <label class="control-label" for="url">URL</label>
-        <div class="controls">
-            <input name="url" type="text" value="{{url}}" placeholder="Your URL"/>
-        </div>
+  <form class="main form">
+    <div class="form-group">
+      <label class="control-label" for="url">URL</label>
+      <div class="controls">
+          <input name="url" id="url" type="text" value="{{url}}" placeholder="Your URL" class="form-control"/>
+      </div>
     </div>
-
-    <div class="control-group">
-        <label class="control-label" for="title">Title</label>
-        <div class="controls">
-            <input name="title" type="text" value="{{title}}" placeholder="Name your post"/>
-        </div>
+    <div class="form-group">
+      <label class="control-label" for="title">Title</label>
+      <div class="controls">
+          <input name="title" id="title" type="text" value="{{title}}" placeholder="Name your post" class="form-control"/>
+      </div>
     </div>
-
-    <div class="control-group">
-        <div class="controls">
-            <input type="submit" value="Submit" class="btn btn-primary submit"/>
-        </div>
-    </div>
+    <input type="submit" value="Submit" class="btn btn-primary submit"/>
     <hr/>
-    <div class="control-group">
-        <div class="controls">
-            <a class="btn btn-danger delete" href="#">Delete post</a>
-        </div>
-    </div>
+    <a class="btn btn-danger delete" href="#">Delete post</a>
   </form>
 </template>
 ~~~
-<%= caption "client/views/posts/post_edit.html" %>
+<%= caption "client/templates/posts/post_edit.html" %>
 
 ////
 
@@ -122,7 +113,7 @@ Template.postEdit.events({
   }
 });
 ~~~
-<%= caption "client/views/posts/post_edit.js" %>
+<%= caption "client/templates/posts/post_edit.js" %>
 
 ////
 
@@ -148,11 +139,11 @@ Template.postEdit.events({
         {{#if ownPost}}<a href="{{pathFor 'postEdit'}}">Edit</a>{{/if}}
       </p>
     </div>
-    <a href="{{pathFor 'postPage'}}" class="discuss btn">Discuss</a>
+    <a href="{{pathFor 'postPage'}}" class="discuss btn btn-default">Discuss</a>
   </div>
 </template>
 ~~~
-<%= caption "client/views/posts/post_item.html" %>
+<%= caption "client/templates/posts/post_item.html" %>
 <%= highlight "5~8" %>
 
 ////
@@ -160,7 +151,7 @@ Template.postEdit.events({
 ~~~js
 Template.postItem.helpers({
   ownPost: function() {
-    return this.userId == Meteor.userId();
+    return this.userId === Meteor.userId();
   },
   domain: function() {
     var a = document.createElement('a');
@@ -169,7 +160,7 @@ Template.postItem.helpers({
   }
 });
 ~~~
-<%= caption "client/views/posts/post_item.js" %>
+<%= caption "client/templates/posts/post_item.js" %>
 <%= highlight "2~4" %>
 
 <%= screenshot "8-1", "Post edit form." %>
@@ -197,17 +188,16 @@ ownsDocument = function(userId, doc) {
 ////
 
 ~~~js
-Posts = new Meteor.Collection('posts');
+Posts = new Mongo.Collection('posts');
 
 Posts.allow({
-  update: ownsDocument,
-  remove: ownsDocument
+  update: function(userId, post) { return ownsDocument(userId, post); },
+  remove: function(userId, post) { return ownsDocument(userId, post); },
 });
 
-Meteor.methods({
-  ...
+//...
 ~~~
-<%= caption "collections/posts.js" %>
+<%= caption "lib/collections/posts.js" %>
 <%= highlight "3~6" %>
 
 <%= commit "8-2", "Added basic permission to check the post's owner." %>
@@ -219,11 +209,11 @@ Meteor.methods({
 ////
 
 ~~~js
-Posts = new Meteor.Collection('posts');
+Posts = new Mongo.Collection('posts');
 
 Posts.allow({
-  update: ownsDocument,
-  remove: ownsDocument
+  update: function(userId, post) { return ownsDocument(userId, post); },
+  remove: function(userId, post) { return ownsDocument(userId, post); },
 });
 
 Posts.deny({
@@ -232,11 +222,15 @@ Posts.deny({
     return (_.without(fieldNames, 'url', 'title').length > 0);
   }
 });
+
+//...
 ~~~
-<%= caption "collections/posts.js" %>
+<%= caption "lib/collections/posts.js" %>
 <%= highlight "8~13" %>
 
 <%= commit "8-3", "Only allow changing certain fields of posts." %>
+
+////
 
 ////
 
@@ -256,11 +250,10 @@ Posts.deny({
 
 ////
 
+- ////
+- ////
+- ////
+
 ////
 
-- ////
-- ////
-- ////
-
 <% end %>
-
