@@ -5,7 +5,7 @@ date: 0007/01/02
 number: 7.5
 sidebar: true
 contents: Understand latency compensation.|Slow your app down and see what's going on.|Learn how Meteor Methods call each other.
-paragraphs: 28
+paragraphs: 32
 ---
 
 ////
@@ -16,11 +16,11 @@ paragraphs: 28
 
 ////
 
-- *+0ms:* ////
-- *+200ms:* ////
-- *+500ms:* ////
+- ////
+- ////
+- ////
 
-If this were the way Meteor operated, then there'd be a short lag between performing such actions and seeing the results (that lag being more or less noticeable depending on how close you were to the server). We can't have that in a modern web application!
+////
 
 ### Latency Compensation
 
@@ -30,10 +30,10 @@ If this were the way Meteor operated, then there'd be a short lag between perfor
 
 ////
 
-- *+0ms:* ////
-- *+0ms:* ////
-- *+200ms:* ////
-- *+500ms:* ////
+- ////
+- ////
+- ////
+- ////
 
 ////
 
@@ -46,36 +46,79 @@ If this were the way Meteor operated, then there'd be a short lag between perfor
 ////
 
 ~~~js
+Posts = new Mongo.Collection('posts');
+
 Meteor.methods({
-  post: function(postAttributes) {
-    // […]
+  postInsert: function(postAttributes) {
+    check(this.userId, String);
+    check(postAttributes, {
+      title: String,
+      url: String
+    });
+
+    if (Meteor.isServer) {
+      postAttributes.title += "(server)";
+      // wait for 5 seconds
+      Meteor._sleepForMs(5000);
+    } else {
+      postAttributes.title += "(client)";
+    }
+
+    var postWithSameLink = Posts.findOne({url: postAttributes.url});
+    if (postWithSameLink) {
+      return {
+        postExists: true,
+        _id: postWithSameLink._id
+      }
+    }
     
-    // pick out the whitelisted keys
-    var post = _.extend(_.pick(postAttributes, 'url', 'message'), {
-      title: postAttributes.title + (this.isSimulation ? '(client)' : '(server)'),
+    var user = Meteor.user();
+    var post = _.extend(postAttributes, {
       userId: user._id, 
       author: user.username, 
-      submitted: new Date().getTime()
+      submitted: new Date()
     });
-    
-    // wait for 5 seconds
-    if (! this.isSimulation) {
-      var Future = Npm.require('fibers/future');
-      var future = new Future();
-      Meteor.setTimeout(function() {
-        future.return();
-      }, 5 * 1000);
-      future.wait();
-    }
     
     var postId = Posts.insert(post);
     
-    return postId;
+    return {
+      _id: postId
+    };
   }
 });
 ~~~
 <%= caption "collections/posts.js" %>
-<%= highlight "6, 7, 13~22" %>
+<%= highlight "11~17" %>
+
+////
+
+////
+
+~~~js
+Template.postSubmit.events({
+  'submit form': function(e) {
+    e.preventDefault();
+    
+    var post = {
+      url: $(e.target).find('[name=url]').val(),
+      title: $(e.target).find('[name=title]').val()
+    };
+    
+    Meteor.call('postInsert', post, function(error, result) {
+      // display the error to the user and abort
+      if (error)
+        return alert(error.reason);
+      
+      // show this result but route anyway
+      if (result.postExists)
+        alert('This link has already been posted');
+    
+      Router.go('postPage', {_id: result._id});  
+    });
+  }
+});
+~~~
+<%= caption "client/templates/posts/post_submit.js" %>
 
 ////
 
@@ -85,25 +128,31 @@ Meteor.methods({
 
 ~~~js
 Template.postSubmit.events({
-  'submit form': function(event) {
-    event.preventDefault();
+  'submit form': function(e) {
+    e.preventDefault();
     
     var post = {
-      url: $(event.target).find('[name=url]').val(),
-      title: $(event.target).find('[name=title]').val(),
-      message: $(event.target).find('[name=message]').val()
-    }
+      url: $(e.target).find('[name=url]').val(),
+      title: $(e.target).find('[name=title]').val()
+    };
     
-    Meteor.call('post', post, function(error, id) {
+    Meteor.call('postInsert', post, function(error, result) {
+      // display the error to the user and abort
       if (error)
         return alert(error.reason);
+      
+      // show this result but route anyway
+      if (result.postExists)
+        alert('This link has already been posted');
     });
-    Router.go('postsList');
+
+    Router.go('postsList');  
+
   }
 });
 ~~~
-<%= caption "client/views/posts/post_submit.js" %>
-<%= highlight "15" %>
+<%= caption "client/templates/posts/post_submit.js" %>
+<%= highlight "20" %>
 
 <%= scommit "7-5-1", "Demonstrate the order that posts appear using a sleep." %>
 
@@ -121,13 +170,15 @@ Template.postSubmit.events({
 
 ////
 
-1. ////
-2. ////
+////
+////
   
 ### Methods Calling Methods
 
 ////
  
+////
+
 ////
 
 ////
