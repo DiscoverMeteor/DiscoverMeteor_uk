@@ -1,133 +1,133 @@
 ---
-title: Latency Compensation
+title: Компенсація затримки передачі даних
 slug: latency-compensation
 date: 0007/01/02
 number: 7.5
 sidebar: true
-contents: Understand latency compensation.|Slow your app down and see what's going on.|Learn how Meteor Methods call each other.
+contents: Дізнаєтеся що таке компенсація затримки передачі даних. | Сповільните виконання програми та простежите що відбувається. | Дізнаєтеся як Методи Meteor'a викликають один одного.
 paragraphs: 28
 ---
 
-////
+У попередньому розділі ми представили новий концепт зі світу Meteor: ** Методи **.
 
-<%= diagram "latency1", "Without latency compensation", "pull-right" %>
+<%= Diagram "latency1", "Без компенсації затримки передачі даних", "pull-right" %>
 
-////
+Метод Meteor це спосіб організовано виконати серію команд на сервері. У нашому прикладі ми використовували Метод щоб додати до нових постів ім'я автора, id автора, а також поточний час і дату на сервері.
 
-////
+Однак, якщо Meteor виконував би Методи найпримітивнішим способом, у нас з'явилися б проблеми. Уявіть собі наступний ланцюжок подій (часові інтервали тут просто випадкові цифри цілях ілюстрації):
 
-- *+0ms:* ////
-- *+200ms:* ////
-- *+500ms:* ////
+- * + 0ms: * Користувач тисне кнопку Submit і браузер викликає Метод.
+- * + 200ms: * Сервер вносить зміни базу даних Mongo.
+- * + 500ms: * Клієнт отримує змінені дані і оновлює інтерфейс щоб їх відобразити
 
-If this were the way Meteor operated, then there'd be a short lag between performing such actions and seeing the results (that lag being more or less noticeable depending on how close you were to the server). We can't have that in a modern web application!
+Якби Meteor працював саме так, у нас була б затримка між дією користувача і відображенням цієї дії додатком (затримка буде більш-менш відчутна _ залежності як далеко ви перебуваєте від сервера). У сучасному веб додатку подібне запізнення неприпустимі!
 
-### Latency Compensation
+### Компенсація затримки
 
-<%= diagram "latency2", "With latency compensation", "pull-right" %>
+<%= Diagram "latency2", "З компенсацією затримки передачі даних", "pull-right" %>
 
-////
+Щоб уникнути подібних проблем Meteor використовує концепцію під назвою ** Компенсація Затримки ** (** Latency Compensation **). Коли ми створили Метод `post`, ми додали його у файл у папці` collections / `. Це означає що він доступний як серверу, так і * клієнту * - і обидва можуть запустити Метод одночасно!
 
-////
+Коли ви викликаєте Метод, клієнт посилає запит на сервер. Але він також одночасно * симулює * виклик Методу на колекції клієнта. Наш ланцюжок подій буде мати наступний вигляд :
 
-- *+0ms:* ////
-- *+0ms:* ////
-- *+200ms:* ////
-- *+500ms:* ////
+- * + 0ms: * Користувач натискає на кнопку Submit. Браузер викликає Метод на сервері.
+- * + 0ms: * Клієнт симулює дію Методу на своїх локальних колекціях, і тут же відображає його результат в інтерфейсі.
+- * + 200ms: * Сервер вносить зміни _ базу даних Mongo.
+- * + 500ms: * Клієнт отримує відповідь від сервера з результатом операції. Клієнт скасовує симулювання зміних і замінює їх справжніми, які прийшли з сервера (які, як правило, збігаються з симульваними). Інтерфейс користувача оновлюється щоб відобразити зміни, якщо вони є.
 
-////
+В результаті користувач бачить зміних миттєво. Коли додаток отримає відповідь від сервера , інтерфейс додатку може помінятися (а може і залишитися незмінним) щоб відобразити справжні зміни. Щоб ці зміни залишалися мінімальними, нам потрібно якомога краще симулювати реальні документи.
 
-### Observing Latency Compensation
+### Спостерігаємо за компенсацією затримки
 
-////
+Додамо невелику зміну у Методі `post` щоб поспостерігати за діями клієнта і сервера. Для цього ми напишемо код за допомогою npm пакету `futures` - він дозволить нам уповільнити створення об'єктів у Методі.
 
-////
+Ми скористаємося властивістю `isSimulation` щоб дізнатися у Meteor якщо метод був викликаний як` stub`. [Stub] (http://docs.meteor.com/#methods_header) це та сама симуляція Методу на клієнті, яку Meteor запускає паралельно з цим Методом на сервері.
 
-////
+Ми дізнаємося у Meteor чи виконується код на клієнті. Якщо так - додамо рядок `(client)` в кінець заголовка нового поста. Якщо ні, додамо рядок `(server)`:
 
-~~~js
-Meteor.methods({
-  post: function(postAttributes) {
-    // […]
-    
-    // pick out the whitelisted keys
-    var post = _.extend(_.pick(postAttributes, 'url', 'message'), {
-      title: postAttributes.title + (this.isSimulation ? '(client)' : '(server)'),
-      userId: user._id, 
-      author: user.username, 
-      submitted: new Date().getTime()
-    });
-    
-    // wait for 5 seconds
-    if (! this.isSimulation) {
-      var Future = Npm.require('fibers/future');
-      var future = new Future();
-      Meteor.setTimeout(function() {
-        future.return();
-      }, 5 * 1000);
-      future.wait();
-    }
-    
-    var postId = Posts.insert(post);
-    
-    return postId;
-  }
+~~~ js
+Meteor.methods ({
+post: function (postAttributes) {
+// [...]
+
+// Вибираємо потрібні поля для публікації
+var post = _.extend (_. pick (postAttributes, 'url', 'message'), {
+title: postAttributes.title + (this.isSimulation? '(client)': '(server)'),
+userId: user._id,
+author: user.username,
+submitted: new Date (). getTime ()
+});
+
+// Чекаємо 5 секунд
+if (! this.isSimulation) {
+var Future = Npm.require ('fibers / future');
+var future = new Future ();
+Meteor.setTimeout (function () {
+future.return ();
+}, 5 * 1000);
+future.wait ();
+}
+
+var postId = Posts.insert (post);
+
+return postId;
+}
 });
 ~~~
-<%= caption "collections/posts.js" %>
-<%= highlight "6, 7, 13~22" %>
+<%= Caption "collections / posts.js" %>
+<%= Highlight "6, 7, 13 ~ 22" %>
 
-////
+Увага: якщо ви задумалися що означає `this` в` this.isSimulation` - це так званий [Method invocation object] (http://docs.meteor.com/#meteor_methods) (об'єкт виклику Методу) який дає доступ до різних корисних змінних.
 
-////
+Докладний розбір пакета [Futures] (https://npmjs.org/package/future) виходить за рамки нашої книги. Але якщо коротко - ми просто повідомили Meteor почекати 5 секунд перед тим як додавати новий об'єкт в колекцію на сервері.
 
-////
+Ми також зробимо перенаправлення користувача на сторінку зі списком постів:
 
-~~~js
-Template.postSubmit.events({
-  'submit form': function(event) {
-    event.preventDefault();
-    
-    var post = {
-      url: $(event.target).find('[name=url]').val(),
-      title: $(event.target).find('[name=title]').val(),
-      message: $(event.target).find('[name=message]').val()
-    }
-    
-    Meteor.call('post', post, function(error, id) {
-      if (error)
-        return alert(error.reason);
-    });
-    Router.go('postsList');
-  }
+~~~ js
+Template.postSubmit.events ({
+'submit form': function (event) {
+event.preventDefault ();
+
+var post = {
+url: $ (event.target) .find ('[name = url]'). val (),
+title: $ (event.target) .find ('[name = title]'). val (),
+message: $ (event.target) .find ('[name = message]'). val ()
+}
+
+Meteor.call ('post', post, function (error, id) {
+if (error)
+return alert (error.reason);
+});
+Router.go ('postsList');
+}
 });
 ~~~
-<%= caption "client/views/posts/post_submit.js" %>
-<%= highlight "15" %>
+<%= Caption "client / views / posts / post_submit.js" %>
+<%= Highlight "15" %>
 
-<%= scommit "7-5-1", "Demonstrate the order that posts appear using a sleep." %>
+<%= Scommit "7-5-1", "Демонструємо порядок появи постів за допомогою методу sleep" %>
 
-////
+Якщо ми створимо пост, ми наочно побачимо компенсацію затримки в дії. Спочатку пост з'явиться з рядком `(client)` в заголовку (перший пост у списку, з посиланням на GitHub):
 
-<%= screenshot "s5-1", "Our post as first stored in the client collection" %>
+<%=  Screenshot "s5-1", "Наш пост збережений _ колекції клієнта" %>
 
-////
+Потім, 5 секунд по тому, він замінюється цим документом з сервера:
 
-<%= screenshot "s5-2", "Our post once the client receives the update from the server collection" %>
+<%= Screenshot "s5-2", "Наш пост після відповіді сервера" %>
 
-### Client Collection Methods
+### Методи колекцій клієнта
 
-////
+Після всього цього можна подумати, що Методи досить складні. Насправді вони можуть бути дуже прості. Ми вже побачили три дуже простих Методи для редагування колекцій - `insert`,` update` і `remove`.
 
-////
+Коли ви створюєте нову колекцію `posts`, ви також створюєте три Методи:` posts / insert`, `posts / update` і` posts / delete`. Іншими словами, коли ви викликаєте `Posts.insert ()` у колекції клієнта, ви викликаєте Метод з компенсацією затримки, який робить дві речі:
 
-1. ////
-2. ////
-  
-### Methods Calling Methods
+1. Перевіряє чи є у нього можливість редагувати колекцію викликаючи функції `allow` і` deny`.
+2. Редагує локальну колекцію.
 
-////
- 
-////
+### Методи викликають Методи
 
-////
+Якщо ви ще не втратили нитку розповіді, ймовірно ви тільки що помітили що наш Метод `post` викликає інший Метод (` posts / insert`) коли ми створюємо наш пост. Як це працює?
+
+Коли запускається симуляція (версія Методу на клієнті), ми також запускаємо симуляцію методу `insert` (таким чином додаючи новий об'єкт в колекцію на клієнті). Але ми * Не викликаємо * справжній, серверний `insert` - ми очікуємо що * серверна * версія методу` post` зробить це.
+
+Послідовно, коли серверна версія методу `post` викликає` insert`, нам не потрібно турбуватися щодо симуляції, і об'єкт успішно створюється в головній базі даних.

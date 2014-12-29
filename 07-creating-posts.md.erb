@@ -1,120 +1,106 @@
 ---
-title: Creating Posts
+title: Створення постів
 slug: creating-posts
 date: 0007/01/01
 number: 7
-contents: Learn how to submit a post client-side.|Implement a simple security check.|Restrict access to the post submit form.|Learn to use a server-side Method for added security.
-paragraphs: 60
+contents: Дізнаєтеся як створити новий пост на клієнті. | Створите просту перевірку даних. | Обмежите доступ до форми створення постів. | Навчитеся використовувати метод перевірки даних на сервері для додаткової безпеки.
+paragraphs: 64
 ---
 
-////
+Ми вже знаємо як створювати нові пости через консоль командою `Posts.insert`, але ми не можемо очікувати, що наші користувачі будуть відкривати консоль для створення нового посту.
 
-////
+Очевидно, нам потрібно створити якийсь користувацький інтерфейс для додавання нових постів в нашому додатку.
 
-### Building The New Post Page
+### Створення сторінки додавання постів
 
-////
+Для початку створимо маршрут до нашої нової сторінки:
 
 ~~~js
 Router.configure({
   layoutTemplate: 'layout',
   loadingTemplate: 'loading',
+  notFoundTemplate: 'notFound',
   waitOn: function() { return Meteor.subscribe('posts'); }
 });
 
-Router.map(function() {
-  this.route('postsList', {path: '/'});
-  
-  this.route('postPage', {
-    path: '/posts/:_id',
-    data: function() { return Posts.findOne(this.params._id); }
-  });
-  
-  this.route('postSubmit', {
-    path: '/submit'
-  });
+Router.route('/', {name: 'postsList'});
+
+Router.route('/posts/:_id', {
+  name: 'postPage',
+  data: function() { return Posts.findOne(this.params._id); }
 });
+
+Router.route('/submit', {name: 'postSubmit'});
+
+Router.onBeforeAction('dataNotFound', {only: 'postPage'});
 ~~~
 <%= caption "lib/router.js" %>
-<%= highlight "13~15" %>
+<%= highlight "15" %>
 
-////
+### Додавання лінку в заголовок
 
-### Adding A Link To The Header
-
-////
+Тепер, коли у нас визначено маршрут нової сторінки, ми можемо додати на неї посилання в заголовок:
 
 ~~~html
 <template name="header">
-  <header class="navbar">
-    <div class="navbar-inner">
-      <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-      </a>
-      <a class="brand" href="{{pathFor 'postsList'}}">Microscope</a>
-      <div class="nav-collapse collapse">
-        <ul class="nav">
-          <li><a href="{{pathFor 'postSubmit'}}">New</a></li>
+  <nav class="navbar navbar-default" role="navigation">
+    <div class="container-fluid">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navigation">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="{{pathFor 'postsList'}}">Microscope</a>
+      </div>
+      <div class="collapse navbar-collapse" id="navigation">
+        <ul class="nav navbar-nav">
+          <li><a href="{{pathFor 'postSubmit'}}">Submit Post</a></li>
         </ul>
-        <ul class="nav pull-right">
-          <li>{{loginButtons}}</li>
+        <ul class="nav navbar-nav navbar-right">
+          {{> loginButtons}}
         </ul>
       </div>
     </div>
-  </header>
+  </nav>
 </template>
 ~~~
-<%= caption "client/views/includes/header.html" %>
-<%= highlight "11~16" %>
+<%= caption "client/templates/includes/header.html" %>
+<%= highlight "14~16" %>
 
-////
+Створення маршруту означає, що якщо користувач вирішить відкрити адресу `/ submit` в браузері, Meteor відрендерить шаблон` postSubmit`. Давайте створимо цей шаблон:
 
 ~~~html
 <template name="postSubmit">
-  <form class="main">
-    <div class="control-group">
-        <label class="control-label" for="url">URL</label>
-        <div class="controls">
-            <input name="url" type="text" value="" placeholder="Your URL"/>
-        </div>
+  <form class="main form">
+    <div class="form-group">
+      <label class="control-label" for="url">URL</label>
+      <div class="controls">
+          <input name="url" id="url" type="text" value="" placeholder="Your URL" class="form-control"/>
+      </div>
     </div>
-
-    <div class="control-group">
-        <label class="control-label" for="title">Title</label>
-        <div class="controls">
-            <input name="title" type="text" value="" placeholder="Name your post"/>
-        </div>
+    <div class="form-group">
+      <label class="control-label" for="title">Title</label>
+      <div class="controls">
+          <input name="title" id="title" type="text" value="" placeholder="Name your post" class="form-control"/>
+      </div>
     </div>
-
-    <div class="control-group">
-        <label class="control-label" for="message">Message</label>
-        <div class="controls">
-            <textarea name="message" type="text" value=""/>
-        </div>
-    </div> 
-
-    <div class="control-group">
-        <div class="controls">
-            <input type="submit" value="Submit" class="btn btn-primary"/>
-        </div>
-    </div>
+    <input type="submit" value="Submit" class="btn btn-primary"/>
   </form>
 </template>
-
 ~~~
-<%= caption "client/views/posts/post_submit.html" %>
+<%= caption "client/templates/posts/post_submit.html" %>
 
-////
+Зверніть увагу: велика кількість нової розмітки, це все внаслідок використання Twitter Bootstrap. Насправді, нам потрібна тільки форма нового посту, але додаткові теги і класи трошки покращать зовнішній вигляд додатку. Тепер наша нова сторінка буде виглядати приблизно так:
 
-<%= screenshot "7-1", "The post submit form" %>
+<%= screenshot "7-1", "Форма для нового посту"%>
 
-////
+Це проста форма. Нам не потрібно хвилюватися щодо параметра `action` для цієї форми, так як ми перехопимо події форми і оновимо дані за допомогою JavaScript. (Також не варто хвилюватися щодо варіанту, коли JavaScript вимкнено в браузері - адже тоді додаток Meteor просто не буде працювати).
 
-### Creating Posts
+### Створення постів
 
-////
+Давайте прив’яжемо обробник подій для події `Submit`. Найпростіше використовувати подію `submit` (ніж, наприклад, ловити подія` click` на кнопці), адже тоді ми охопимо всі можливі сценарії подій (наприклад, натискання кнопки `Enter` в формі).
 
 ~~~js
 Template.postSubmit.events({
@@ -123,46 +109,47 @@ Template.postSubmit.events({
     
     var post = {
       url: $(e.target).find('[name=url]').val(),
-      title: $(e.target).find('[name=title]').val(),
-      message: $(e.target).find('[name=message]').val()
-    }
+      title: $(e.target).find('[name=title]').val()
+    };
     
     post._id = Posts.insert(post);
     Router.go('postPage', post);
   }
 });
 ~~~
-<%= caption "client/views/posts/post_submit.js" %>
+<%= caption "client/templates/posts/post_submit.js" %>
 
-<%= commit "7-1", "Added a submit post page and linked to it in the header." %>
+<%= commit "7-1", "Додані сторінка з новим постом і лінк на неї в заголовок сторінки"%>
 
-////
+Ця функція використовує [jQuery](http://jquery.com), щоб спарсити дані зі наших полів форми і створити об'єкт нового поста з результатів. Ми також додали виклик `preventDefault` для події` event`, щоб браузер не спробував відправити форму традиційним способом.
 
-////
+Нарешті, ми можемо перенаправити користувача на сторінку з новим постом. Виклик функції `insert()` у колекції поверне згенерований `_id` об'єкта, який щойно був доданий в базу даних, і він буде використовуватись функцією маршрутизатора `go()` для конструювання направляючого URL.
 
-////
+Кінцевий результат -- користувач жме `Submit` і створюється пост, і користувач тут же перенаправляється на сторінку обговорення цього посту.
 
-### Adding Some Security
+### Додавання деякої безпеки
 
-////
+Створення постів -- це чудово, але було б непогано обмежити доступ для випадкових користувачів: нам необхідно, щоб вони увійшли для цього. Звичайно, ми можемо заховати форму на сторінці для неавторизованих користувачів. Але не дивлячись на це, змислений користувач міг би створити пост через консоль браузера, навіть не авторизувавшись і ми не можемо відкидати таку можливість.
 
-////
+На щастя, захист даних вшито прямо в колекції Meteor; просто він за замовчуванням відключений для нових проектів. Це дозволяє легко розпочати новий додаток, відклавши нудні речі не витрачаючи час на потім.
 
-////
+Нашому додатку більше не потрібні ці костилі, тому настав час їх позбутися! Давайте видалимо пакет `insecure`:
 
-~~~bash
-$ meteor remove insecure
+~~~ bash
+meteor remove insecure
 ~~~
-<%= caption "Terminal" %>
+<%= caption "Термінал" %>
 
-////
+Можливо ви помітили, що форма додавання постів зламалася. Це тому, що без пакета `insecure` вставка в колекцію постів на клієнті *заборонено*.
 
-### Allowing Post Inserts
+Нам потрібно або встановити додаткові правила, що повідомляють Meteor, що клієнтам можна створювати нові пости, або робити вставку постів на сервері.
 
-////
+### Дозвіл створення нових постів
+
+Для початку ми покажемо як дозволити вставку постів на клієнті, щоб полагодити надсилання форми. Як з’ясується, ми випадково зупинимося на трохи іншому підході, але зараз ми можемо все полагодити досить просто:
 
 ~~~js
-Posts = new Meteor.Collection('posts');
+Posts = new Mongo.Collection('posts');
 
 Posts.allow({
   insert: function(userId, doc) {
@@ -171,156 +158,161 @@ Posts.allow({
   }
 });
 ~~~
-<%= caption "collections/posts.js" %>
+<%= caption "lib/collections/posts.js" %>
 <%= highlight "3~8" %>
 
-<%= commit "7-2", "Removed insecure, and allowed certain writes to posts." %>
+<%= commit "7-2", "Видалили пакет insecure, дозволили певні записи в пости"%>
 
-////
+Виклик `Posts.allow` повідомляє Meteor: "в цих обставинах клієнтам дозволено модифікувати колекцію `Posts`". В даному випадку ми говоримо що "клієнтам дозволено створювати нові пости доти поки в них є` userId` ".
 
-////
+Параметр `userId` користувача, який створює пост, передається викликам `allow` і `deny` (або функція поверне `null`, якщо користувач не залогінений), що майже завжди корисно. Так як користувацькі акаунти зв'язані з ядром Meteor, ми можемо покладатися на те, що `userId` завжди вірний.
 
-////
+Ми обмежили створення постів тільки для авторизованих користувачів. Спробуйте вийти з акаунта і створити пост -- ви швидше за все побачите наступне в консолі:
 
-<%= screenshot "7-2", "Insert failed: Access denied " %>
+<%= screenshot "7-2", "Insert failed: Access denied - Вставка провалилася: Відмовлено в доступі"%>
 
-////
+Однак, нам потрібно вирішити ще пару проблем:
 
- - ////
- - ////
- - ////
+- Неавторизовані користувачі все ще доступна форма створення нових постів
+- Пост ніяк не зв'язаний з користувачем (і у нас немає коду на сервері для цього).
+- Можна створити безліч постів, що ведуть до одного і того ж URL.
 
-////
+Давайте це виправимо.
 
-### Securing Access To The New Post Form
 
-////
+### Обмеження доступу до форми додавання постів
 
-////
+Давайте розпочнемо з обмеження неавторизованних користувачів від форми створення постів. Зробимо це на рівні маршрутизатора шляхом створення *хуку маршрутизатора*.
 
-////
+Хук перехоплює процес маршрутизації і потенціально може змінювати дію, яку робить маршрутизатор. Ви можете уявляти це, як охорона, що перевіряє ваші повноваження, перед тим, як вас пропустити (або не пропустити).
+
+Нам потрібно перевірити чи залогінився користувач. Якщо ні -- відрендерити шаблон `accessDenied` замість очікуваного `postSubmit` (далі ми зупинемо маршрутизатор від будь-чого). Давайте змінимо наш router.js наступним чином:
 
 ~~~js
 Router.configure({
-  layoutTemplate: 'layout'
+  layoutTemplate: 'layout',
+  loadingTemplate: 'loading',
+  notFoundTemplate: 'notFound',
+  waitOn: function() { return Meteor.subscribe('posts'); }
 });
 
-Router.map(function() {
-  this.route('postsList', {path: '/'});
-  
-  this.route('postPage', {
-    path: '/posts/:_id',
-    data: function() { return Posts.findOne(this.params._id); }
-  });
-  
-  this.route('postSubmit', {
-    path: '/submit'
-  });
+Router.route('/', {name: 'postsList'});
+
+Router.route('/posts/:_id', {
+  name: 'postPage',
+  data: function() { return Posts.findOne(this.params._id); }
 });
+
+Router.route('/submit', {name: 'postSubmit'});
 
 var requireLogin = function() {
   if (! Meteor.user()) {
     this.render('accessDenied');
-    this.stop();
+  } else {
+    this.next();
   }
 }
 
-Router.before(requireLogin, {only: 'postSubmit'});
+Router.onBeforeAction('dataNotFound', {only: 'postPage'});
+Router.onBeforeAction(requireLogin, {only: 'postSubmit'});
 ~~~
 <%= caption "lib/router.js" %>
-<%= highlight "18~25" %>
+<%= highlight "17~23,26" %>
 
-////
+Тепер створимо шаблон для сторінки "Доступ заборонено":
 
 ~~~html
 <template name="accessDenied">
-  <div class="alert alert-error">You can't get here! Please log in.</div>
+  <div class="access-denied jumbotron">
+    <h2>Access Denied</h2>
+    <p>You can't get here! Please log in.</p>
+  </div>
 </template>
 ~~~
-<%= caption "client/views/includes/access_denied.html" %>
+<%= caption "client/templates/includes/access_denied.html" %>
 
 <%= commit "7-3", "Denied access to new posts page when not logged in." %>
 
-////
+If you now head to http://localhost:3000/submit/ without being logged in, you should see a message similar to this one:
 
-<%= screenshot "7-3", "The access denied template" %>
+<%= screenshot "7-3", "Доступ заборонений до сторінки з новими постами якщо користувач не залогінився"%>
 
-////
+Якщо ви спробуєте перейти на http://localhost:3000/submit/ не авторизувавшись, то ви побачите повідомлення схоже на таке:
 
-////
+<%= screenshot "7-3", "Шаблон - доступ заборонений"%>
 
-////
+Чудовою річчю щодо хуків маршрутизатора є та, що вони також *рреактівні*. Це означає, що нам не потрібно турбуватися про створення резервних функцій (колбеків), коли користувач авторизується: коли логін статус користувача змінюється, шаблон сторінки маршрутизатора негайно зміниться з `accessDenied` на `postSubmit` без необхідності для нас писати додатковий код для цього (і, між іншим, це працює навіть між різними вкладками браузера).
 
-////
+Авторизуйтесь і спробуйте оновити сторінку. Можливо ви інколи побачите шаблон "Доступ заборонено" на коротку мить перед тим, як з'явиться форма для створення поста. Причиною цього є те, що Meteor починає рендерити шаблони якомога раніше, ще до того, як додаток встиг поспілкуватися з сервером і перевірив чи поточний користувач (який поки що збережений у локальному сховищі браузера) взагалі існує.
 
-////
+Щоб уникнути цієї проблеми (а це поширена проблема, з якою ви ще зіткнетеся, коли будете розбирати пікантні деталі затримок передачі даних між клієнтом і сервером), ми просто покажемо екран завантаження на той короткий момент, поки ми з'ясуємо, чи має поточний користувач доступ, чи ні.
+
+На даному етапі ми не знаємо, користувач ввів коректно свій логін і пароль, тому ми не можемо показати шаблон `accessDenied` або `postSubmit` до тих пір, поки це не з'ясуємо.
+
+Змінимо наш hook, щоб використати наш шаблон завантаження сторінки поки `Meteor.loggingIn()` є true:
 
 ~~~js
-Router.map(function() {
-  this.route('postsList', {path: '/'});
-  
-  this.route('postPage', {
-    path: '/posts/:_id',
-    data: function() { return Posts.findOne(this.params._id); }
-  });
-  
-  this.route('postSubmit', {
-    path: '/submit'
-  });
-});
+//...
 
 var requireLogin = function() {
   if (! Meteor.user()) {
-    if (Meteor.loggingIn())
+    if (Meteor.loggingIn()) {
       this.render(this.loadingTemplate);
-    else
+    } else {
       this.render('accessDenied');
-    
-    this.stop();
+    }
+  } else {
+    this.next();
   }
 }
 
-Router.before(requireLogin, {only: 'postSubmit'});
+Router.onBeforeAction('dataNotFound', {only: 'postPage'});
+Router.onBeforeAction(requireLogin, {only: 'postSubmit'});
 ~~~
 <%= caption "lib/router.js" %>
-<%= highlight "16~19" %>
+<%= highlight "5~10" %>
 
-<%= commit "7-4", "Show a loading screen while waiting to login." %>
+<%= commit "7-4", "Показуємо екран завантаження поки перевіряється логін"%>
 
-### Hiding the Link
+### Приховування лінку
 
-////
+Найпростіший спосіб запобігти спробам користувачів зайти на сторінку помилково, коли вони не авторизовані, -- це просто заховати лінк від них. Ми можемо це досить легко зробити:
 
 ~~~html
-<ul class="nav">
+//...
+
+<ul class="nav navbar-nav">
   {{#if currentUser}}<li><a href="{{pathFor 'postSubmit'}}">Submit Post</a></li>{{/if}}
 </ul>
+
+//...
 ~~~
-<%= caption "client/views/includes/header.html" %>
+<%= caption "client/templates/includes/header.html" %>
+<%= highlight "3~5" %>
 
-<%= commit "7-5", "Only show submit post link if logged in." %>
+<%= commit "7-5", "Показувати посилання на створення поста тільки коли користувач залогінився"%>
 
-////
+Хелпер `currentUser` доступний для нас через пакет `accounts` і є в Spacebar еквівалентом для `Meteor.user()`. Так як він реактивний, лінк буде з'являтися і зникати на сторінці, коли ви будете заходити і виходити з додатку.
 
-### Meteor Method: Better Abstraction and Security
+### Метод Meteor: кращі абстракція і безпека
 
-////
+Ми закрили доступ до сторінки з новими постами для неавторизованих користувачів, а також заборонили для таких користувачів створення нових постів, навіть якщо вони можуть мухлювати і використовувати консоль браузера. Залишилося ще кілька моментів, які необхідно зробити:
 
-- ////
-- ////
-- ////
+- Визначити дату і час створення постів
+- Забезпечити, щоб те й же самий URL не був використаний повторно.
+- Додати деталі автора поста (ID, ім'я користувача, тощо)
 
-////
+Ви можете подумати, що все це можна зробити в нашому обробнику події `submit`. На практиці це б викликало масу проблем:
 
-- ////
-- ////
-- ////
+- Для дати і часу посту нам довелося б розраховувати дату-час комп'ютера користувача, яка цілком може виявитися невірною.
+- Клієнти не будуть знати про _всі_ URL постів на сайті. Вони можуть знати про пости, що зараз бачать (трохи пізніше ми розберемо як це працює), тому немає змоги забезпечити унікальність URL на клієнті.
+- Нарешті, навіть якщо ми і _могли_ би додати деталі автора на клієнті, ми ніяк не змогли б забезпечити їх точність, що відкрило б дірку в безпеці для людей, що використовують консоль браузера.
 
-////
+Через усі ці причини нам варто робити обробники подій простими, а якщо ми збираємося здійснювати більш просунуті операції з додаванням і редагуванням колекцій, варто використовувати **Метод**.
 
-////
+Метод Meteor -- це функція на сервері, яку *викликається* клієнтом. Поки що ми погано з ними знайомі -- хоча насправді, за лаштунками, методи `insert`, `update` і `remove` наших колекцій -- це всі Методи. Давайте дізнаємося, як створити наш власний Метод.
 
-////
+Повернемося до файлу `post_submit.js`. Замість того щоб додавати новий пост безпосередньо в колекцію `Posts`, ми викличемо Метод під назвою `postInsert`:
 
 ~~~js
 Template.postSubmit.events({
@@ -329,82 +321,156 @@ Template.postSubmit.events({
     
     var post = {
       url: $(e.target).find('[name=url]').val(),
-      title: $(e.target).find('[name=title]').val(),
-      message: $(e.target).find('[name=message]').val()
-    }
+      title: $(e.target).find('[name=title]').val()
+    };
     
-    Meteor.call('post', post, function(error, id) {
+    Meteor.call('postInsert', post, function(error, result) {
+      // display the error to the user and abort
       if (error)
         return alert(error.reason);
-        
-      Router.go('postPage', {_id: id});
+      
+      Router.go('postPage', {_id: result._id});  
     });
   }
 });
 ~~~
-<%= caption "client/views/posts/post_submit.js" %>
+<%= caption "client/templates/posts/post_submit.js" %>
+<%= highlight "10~16" %>
 
-////
+Функція `Meteor.call` викличе Метод по імені свого першого аргументу. Ви можете додати аргументи до цього виклику (в даному випадку об'єкт `post`, створений з форми) і ще додати колбек-функцію, яка буде виконана, коли Метод на сервері закінчить обробку.
 
-////
+Метеор колбек-функції завжди мають два аргументи: `error` і `result`. Якщо, за будь-якої причини, `error` аргумент існує, то ми повідомимо про це користувача (використовуючи `return` для відміни колбеку). Якщо ж все спрацювало як треба, то ми перенаправимо користувача на тільки що створенну сторінку обговорення поста.
+
+### Перевірка безпеки
+
+Скористаємося можливістю і додамо деяку безпеку до нашого методу за допомогою пакету [`audit-argument-checks`](http://docs.meteor.com/#auditargumentchecks).
+
+Цей пакет дає можливість перевірити будь-який JavaScript об'єкт за допомогою встановленого патерну. У нашому випадку, ми використаємо його, щоб переконатися, що користувач, що викликає метод, залогінений (перевіривши чи `Meteor.userId ()` є `String`) і що об'єкт `postAttributes`, який передається методу як аргумент, містить рядки `title` і `url`, інакше ми закінчимо вставкою різних випадкових даних в нашу БД.
+
+Тепер визначимо мето `postInsert` у файлі `collections/posts.js`. Нам треба забрати блок `allow()` з `posts.js`, так як Методи Meteor ігнорують їх в будь-якому випадку.
+
+Далі ми розширимо `postAttributes` об’єкт трьома параметрами: `_id` користувача і `username`, а також часовим полем `submitted`, перед вставкою всього в нашу БД і поверненням результуючого `_id` до клієнта (іншими словами, оригінального визивача цього методу) в JavaScript об’єкті.
 
 ~~~js
-Posts = new Meteor.Collection('posts');
+Posts = new Mongo.Collection('posts');
 
 Meteor.methods({
-  post: function(postAttributes) {
-    var user = Meteor.user(),
-      postWithSameLink = Posts.findOne({url: postAttributes.url});
+  postInsert: function(postAttributes) {
+    check(Meteor.userId(), String);
+    check(postAttributes, {
+      title: String,
+      url: String
+    });
     
-    // ensure the user is logged in
-    if (!user)
-      throw new Meteor.Error(401, "You need to login to post new stories");
-    
-    // ensure the post has a title
-    if (!postAttributes.title)
-      throw new Meteor.Error(422, 'Please fill in a headline');
-    
-    // check that there are no previous posts with the same link
-    if (postAttributes.url && postWithSameLink) {
-      throw new Meteor.Error(302, 
-        'This link has already been posted', 
-        postWithSameLink._id);
-    }
-    
-    // pick out the whitelisted keys
-    var post = _.extend(_.pick(postAttributes, 'url', 'title', 'message'), {
+    var user = Meteor.user();
+    var post = _.extend(postAttributes, {
       userId: user._id, 
       author: user.username, 
-      submitted: new Date().getTime()
+      submitted: new Date()
     });
     
     var postId = Posts.insert(post);
     
-    return postId;
+    return {
+      _id: postId
+    };
+  }
+});
+~~~
+<%= caption "lib/collections/posts.js" %>
+<%= highlight "3~24" %>
+
+Зауважте що `_.extend ()` метод узятий з бібліотеки [Underscore](http://underscorejs.org) і просто дозволяє вам "розширити" один об'єкт властивостями іншого.
+
+<%= commit "7-6", "Використовуємо Метод для створення нового поста"%>
+
+<% note do %>
+
+### Прощання з Allow/Deny
+
+Методи Метеору виконуються на сервері, тому Meteor припускає, що їм можна довіряти. Таким чином, Методи Meteor'а ігнорують будь allow/deny колбеки.
+
+Якщо ви хочете запустити деякий код перед кожною операцією `insert`,` update` або `remove` *навіть на сервері*, ми пропонуємо вам ознайомитися з пакетом [collection-hooks](https://github.com/matb33/meteor-collection-hooks).
+
+<% end %>
+
+### Запобігання дублікатів
+
+Ми зробимо ще одну перевірку перед обгортанням нашого методу. Якщо пост з таким же URL вже був створенний раніше, ми не додамо лінк вдруге, замість цього перенаправимо користувача на вже існуючий пост.
+
+~~~js
+Meteor.methods({
+  postInsert: function(postAttributes) {
+    check(this.userId, String);
+    check(postAttributes, {
+      title: String,
+      url: String
+    });
+    
+    var postWithSameLink = Posts.findOne({url: postAttributes.url});
+    if (postWithSameLink) {
+      return {
+        postExists: true,
+        _id: postWithSameLink._id
+      }
+    }
+    
+    var user = Meteor.user();
+    var post = _.extend(postAttributes, {
+      userId: user._id, 
+      author: user.username, 
+      submitted: new Date()
+    });
+    
+    var postId = Posts.insert(post);
+    
+    return {
+      _id: postId
+    };
   }
 });
 ~~~
 <%= caption "collections/posts.js" %>
+<%= highlight "9~15" %>
 
-<%= commit "7-6", "Use a method to submit the post." %>
+Ми шукаємо в нашій БД пости з таким же URL. Якщо такий знайдено, то ми повернемо його `_id` разом з прапором` postExists: true`, щоб повідомити клієнта про виняткову ситуацію.
 
-////
+А так як ми запускаємо `return` виклик, то метод на цій точці зупинить, не виконавши інструкцію `insert`, таким чином запобігнемо створенню дублікатів.
 
-////
+Все що залишилося -- це використати цю нову `postExists` інформацію в нашому клієнтському  в нашому хелпері для показу попередження:
 
-////
+~~~js
+Template.postSubmit.events({
+  'submit form': function(e) {
+    e.preventDefault();
+    
+    var post = {
+      url: $(e.target).find('[name=url]').val(),
+      title: $(e.target).find('[name=title]').val()
+    };
+    
+    Meteor.call('postInsert', post, function(error, result) {
+      // display the error to the user and abort
+      if (error)
+        return alert(error.reason);
+      
+      // show this result but route anyway
+      if (result.postExists)
+        alert('This link has already been posted');
+    
+      Router.go('postPage', {_id: result._id});  
+    });
+  }
+});
+~~~
+<%= caption "client/templates/posts/post_submit.js" %>
+<%= highlight "15~17" %>
 
-////
+<%= commit "7-7", "Забезпечення унікальності URL." %>
 
-////
+### Сортування постів
 
-////
-
-////
-
-### Sorting Posts
-
-////
+Тепер, коли для кожного посту визначена дата, варто забезпечити, щоб всі пости сортувалися за цим атрибутом. Для цього скористаємося оператором Mongo `sort`, який приймає об'єкт, що складається з ключів за якими слід сортувати і знаком напряму сортування.
 
 ~~~js
 Template.postsList.helpers({
@@ -413,11 +479,11 @@ Template.postsList.helpers({
   }
 });
 ~~~
-<%= caption "client/views/posts/posts_list.js" %>
+<%= caption "client/templates/posts/posts_list.js" %>
 <%= highlight "3" %>
 
-<%= commit "7-7", "Sort posts by submitted timestamp." %>
+<%= commit "7-8", "Сортуємо об'єкти за часом створення"%>
 
-////
+Все це зайняло у нас деякий час, але тепер у нас є повноцінний інтерфейс, щоб користувачі могли безпечно вводити дані в наш додаток!
 
-////
+Але будь-який додаток, що дозволяє користувачам створювати контент також потребує якийсь спосіб для редагування або видалення його.Про це і буде наступний розділ.
